@@ -1,5 +1,19 @@
 <script lang="ts" setup>
+import { ref } from 'vue'
 import Button from '../components/Button.vue'
+import Tabs from '../components/Tabs.vue'
+import TabItem from '../components/TabItem.vue'
+import Input from '../components/Input.vue'
+
+const activeTab = ref('projects')
+const searchQuery = ref('')
+
+const tabs = [
+  { name: 'Все', value: 'all' },
+  { name: 'Проекты', value: 'projects' },
+  { name: 'Путешествия', value: 'travel' },
+  { name: 'Спорт', value: 'sport' },
+] as const
 
 const buttonVariants = [
   { name: 'Primary', value: 'primary' },
@@ -116,6 +130,165 @@ const buttonSizes = [
           <Button variant="base" size="lg" loading>
             Loading...
           </Button>
+        </div>
+      </div>
+    </section>
+    
+    <!-- Tabs Section -->
+    <section class="mb-12">
+      <h2 class="text-xl font-semibold text-text-00 mb-4">Tabs</h2>
+      
+      <!-- Underline + Icon Left -->
+      <div class="mb-8">
+        <h3 class="text-lg font-medium text-text-01 mb-4">Underline + Icon Left</h3>
+        <div class="bg-white p-4 rounded-card">
+          <Tabs v-model="activeTab" variant="underline" icon-position="left">
+            <TabItem v-for="tab in tabs" :key="tab.value" :value="tab.value">
+              <template #icon>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </template>
+              {{ tab.name }}
+            </TabItem>
+          </Tabs>
+        </div>
+      </div>
+      
+      <!-- Underline + Icon Top -->
+      <div class="mb-8">
+        <h3 class="text-lg font-medium text-text-01 mb-4">Underline + Icon Top</h3>
+        <div class="bg-white p-4 rounded-card">
+          <Tabs v-model="activeTab" variant="underline" icon-position="top">
+            <TabItem v-for="tab in tabs" :key="tab.value" :value="tab.value">
+              <template #icon>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </template>
+              {{ tab.name }}
+            </TabItem>
+          </Tabs>
+        </div>
+      </div>
+      
+      <!-- Pill + Icon Left -->
+      <div class="mb-8">
+        <h3 class="text-lg font-medium text-text-01 mb-4">Pill + Icon Left</h3>
+        <div class="bg-white p-4 rounded-card">
+          <Tabs v-model="activeTab" variant="pill" icon-position="left">
+            <TabItem v-for="tab in tabs" :key="tab.value" :value="tab.value">
+              <template #icon>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </template>
+              {{ tab.name }}
+            </TabItem>
+          </Tabs>
+        </div>
+      </div>
+      
+      <!-- Pill + Icon Top -->
+      <div class="mb-8">
+        <h3 class="text-lg font-medium text-text-01 mb-4">Pill + Icon Top</h3>
+        <div class="bg-white p-4 rounded-card">
+          <Tabs v-model="activeTab" variant="pill" icon-position="top">
+            <TabItem v-for="tab in tabs" :key="tab.value" :value="tab.value">
+              <template #icon>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </template>
+              {{ tab.name }}
+            </TabItem>
+          </Tabs>
+        </div>
+      </div>
+      
+      <!-- Icon Only -->
+      <div class="mb-8">
+        <h3 class="text-lg font-medium text-text-01 mb-4">Icon Only (no text)</h3>
+        <div class="bg-white p-4 rounded-card">
+          <Tabs v-model="activeTab" variant="underline" icon-position="only">
+            <TabItem v-for="tab in tabs" :key="tab.value" :value="tab.value">
+              <template #icon>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </template>
+            </TabItem>
+          </Tabs>
+        </div>
+      </div>
+      
+      <!-- Pill + Icon Only -->
+      <div class="mb-8">
+        <h3 class="text-lg font-medium text-text-01 mb-4">Pill + Icon Only</h3>
+        <div class="bg-white p-4 rounded-card">
+          <Tabs v-model="activeTab" variant="pill" icon-position="only">
+            <TabItem v-for="tab in tabs" :key="tab.value" :value="tab.value">
+              <template #icon>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </template>
+            </TabItem>
+          </Tabs>
+        </div>
+      </div>
+    </section>
+    
+    <!-- Input Section -->
+    <section class="mb-12">
+      <h2 class="text-xl font-semibold text-text-00 mb-4">Input</h2>
+      
+      <!-- Sizes -->
+      <div class="mb-8">
+        <h3 class="text-lg font-medium text-text-01 mb-4">Sizes</h3>
+        <div class="flex flex-wrap gap-4 items-center bg-white p-4 rounded-card">
+          <Input size="sm" placeholder="Small" />
+          <Input size="md" placeholder="Medium" />
+          <Input size="lg" placeholder="Large" />
+        </div>
+      </div>
+      
+      <!-- With Icons -->
+      <div class="mb-8">
+        <h3 class="text-lg font-medium text-text-01 mb-4">With Search Icon</h3>
+        <div class="flex flex-wrap gap-4 items-center bg-white p-4 rounded-card">
+          <Input left-icon placeholder="Search..." />
+          <Input left-icon placeholder="Search..." clearable />
+        </div>
+      </div>
+      
+      <!-- States -->
+      <div class="mb-8">
+        <h3 class="text-lg font-medium text-text-01 mb-4">States</h3>
+        <div class="flex flex-wrap gap-4 items-center bg-white p-4 rounded-card">
+          <Input placeholder="Default" />
+          <Input placeholder="Disabled" disabled />
+          <Input placeholder="Error" error error-message="Required field" />
+        </div>
+      </div>
+      
+      <!-- Search Field -->
+      <div class="mb-8">
+        <h3 class="text-lg font-medium text-text-01 mb-4">Search Field</h3>
+        <div class="bg-white p-4 rounded-card">
+          <Input 
+            v-model="searchQuery" 
+            left-icon 
+            placeholder="Search projects..." 
+            clearable 
+            class="w-full max-w-md"
+          />
         </div>
       </div>
     </section>
