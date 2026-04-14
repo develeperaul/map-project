@@ -4,6 +4,8 @@ import Button from '../components/Button.vue'
 import Tabs from '../components/Tabs.vue'
 import TabItem from '../components/TabItem.vue'
 import Input from '../components/Input.vue'
+import Chip from '../components/Chip.vue'
+import FilterPanel from '../components/FilterPanel.vue'
 
 const activeTab = ref('projects')
 const searchQuery = ref('')
@@ -289,6 +291,62 @@ const buttonSizes = [
             clearable 
             class="w-full max-w-md"
           />
+        </div>
+      </div>
+    </section>
+    
+    <!-- Chip Section -->
+    <section class="mb-12">
+      <h2 class="text-xl font-semibold text-text-00 mb-4">Chip</h2>
+      
+      <!-- Sizes -->
+      <div class="mb-8">
+        <h3 class="text-lg font-medium text-text-01 mb-4">Sizes</h3>
+        <div class="flex flex-wrap gap-2 items-center bg-white p-4 rounded-card">
+          <Chip label="Small" size="sm" />
+          <Chip label="Medium" size="md" />
+          <Chip label="Large" size="lg" />
+        </div>
+      </div>
+      
+      <!-- States -->
+      <div class="mb-8">
+        <h3 class="text-lg font-medium text-text-01 mb-4">States</h3>
+        <div class="flex flex-wrap gap-2 items-center bg-white p-4 rounded-card">
+          <Chip label="Default" />
+          <Chip label="Selected" variant="selected" />
+          <Chip label="Disabled" disabled />
+        </div>
+      </div>
+      
+      <!-- Categories (from Figma) -->
+      <div class="mb-8">
+        <h3 class="text-lg font-medium text-text-01 mb-4">Categories (Filters)</h3>
+        <div class="flex flex-wrap gap-2 items-center bg-white p-4 rounded-card">
+          <Chip label="Проекты" variant="selected" />
+          <Chip label="Путешествия" />
+          <Chip label="Спорт" />
+        </div>
+      </div>
+      
+      <!-- Closeable -->
+      <div class="mb-8">
+        <h3 class="text-lg font-medium text-text-01 mb-4">Closeable</h3>
+        <div class="flex flex-wrap gap-2 items-center bg-white p-4 rounded-card">
+          <Chip label="Проекты" variant="selected" closeable />
+          <Chip label="Путешествия" closeable />
+          <Chip label="Спорт" closeable />
+        </div>
+      </div>
+    </section>
+    
+    <!-- FilterPanel Section -->
+    <section class='mb-12'>
+      <h2 class='text-xl font-semibold text-text-00 mb-4'>FilterPanel</h2>
+      
+      <div class='mb-8'>
+        <div class='bg-white p-4 rounded-card'>
+          <FilterPanel />
         </div>
       </div>
     </section>

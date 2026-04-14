@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
+import BaseIcon from './BaseIcon.vue'
 
 interface Props {
   modelValue?: string
@@ -35,23 +36,27 @@ const emit = defineEmits<{
 const inputValue = ref(props.modelValue)
 const isFocused = ref(false)
 
+watch(() => props.modelValue, (newVal) => {
+  inputValue.value = newVal
+})
+
 const sizeClasses = {
   sm: 'h-8 px-3 text-xs',
   md: 'h-10 px-4 text-sm',
   lg: 'h-12 px-4 text-base',
 }
 
-const stateClasses = computed(() => {
+const borderClasses = computed(() => {
   if (props.disabled) {
     return 'bg-base-00 border-border text-text-02 opacity-50 cursor-not-allowed'
   }
   if (props.error) {
-    return 'border-red bg-white text-text-00 focus:border-red'
+    return 'bg-white border-red text-text-00 focus:border-red'
   }
   if (isFocused.value) {
-    return 'border-primary bg-white text-text-00 focus:ring-0'
+    return 'bg-white border-[2px] border-primary-20 text-text-00 focus:border-primary'
   }
-  return 'border-border bg-white text-text-00 hover:border-text-01 focus:border-primary'
+  return 'bg-base-00 border-border text-text-00 hover:border-text-01 focus:border-primary'
 })
 
 const handleInput = (e: Event) => {
@@ -71,12 +76,10 @@ const handleClear = () => {
   <div class="flex flex-col gap-1">
     <div 
       class="flex items-center gap-2 rounded-button border transition-colors duration-200"
-      :class="[sizeClasses[size], stateClasses]"
+      :class="[sizeClasses[size], borderClasses]"
     >
       <slot name="leftIcon">
-        <svg v-if="leftIcon" class="w-5 h-5 text-text-01 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-        </svg>
+        <BaseIcon v-if="leftIcon" name="search" class="w-5 h-5 text-text-00 flex-shrink-0" />
       </slot>
       
       <input
@@ -84,23 +87,19 @@ const handleClear = () => {
         :value="inputValue"
         :placeholder="placeholder"
         :disabled="disabled"
-        class="flex-1 bg-transparent outline-none placeholder:text-text-02"
+        class="flex-1 bg-transparent outline-none placeholder:text-text-01"
         @focus="isFocused = true"
         @blur="isFocused = false"
         @input="handleInput"
       >
       
       <slot name="rightIcon">
-        <button
-          v-if="clearable && inputValue && !disabled"
-          type="button"
-          class="flex-shrink-0 text-text-01 hover:text-text-00"
+        <BaseIcon 
+          v-if="clearable && inputValue && !disabled" 
+          name="close" 
+          class="w-5 h-5 text-text-01 hover:text-text-00 cursor-pointer" 
           @click="handleClear"
-        >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
+        />
       </slot>
     </div>
     

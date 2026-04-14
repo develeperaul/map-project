@@ -9,8 +9,8 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   modelValue: '',
-  variant: 'underline',
-  iconPosition: 'none',
+  variant: 'pill',
+  iconPosition: 'left',
 })
 
 const emit = defineEmits<{
@@ -32,7 +32,7 @@ provide('TabsContext', {
 
 <template>
   <div 
-    class="flex"
+    class="flex w-full"
     :class="[
       variant === 'underline' 
         ? 'border-b border-border' 

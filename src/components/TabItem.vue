@@ -13,7 +13,7 @@ const props = withDefaults(defineProps<Props>(), {
 const tabsContext = inject('TabsContext') as any
 
 const isActive = () => tabsContext?.activeTab === props.value
-const iconPosition = () => tabsContext?.iconPosition || 'left'
+const iconPosition = () => tabsContext?.iconPosition || 'top'
 
 const handleClick = () => {
   if (!props.disabled && tabsContext) {
@@ -27,18 +27,19 @@ const handleClick = () => {
     type="button"
     :disabled="props.disabled"
     :class="[
-      'flex transition-colors duration-200',
-      iconPosition() === 'top' ? 'flex-col items-center' : 'items-center',
-      iconPosition() === 'only' ? 'p-2' : 'px-4 py-2',
-      'gap-2 text-sm',
+      'flex transition-colors duration-200 flex-1 justify-center',
+      iconPosition() === 'top' ? 'flex-col items-center gap-1' : 'items-center gap-2',
+      iconPosition() === 'only' ? 'p-2' : 'px-2 py-3',
+      'text-sm rounded-[6px]',
       tabsContext?.variant === 'underline'
         ? isActive()
           ? 'text-primary border-b-2 border-primary font-medium'
           : 'text-text-01 hover:text-text-00 border-b-2 border-transparent'
         : isActive()
-          ? 'bg-primary text-white rounded-[6px]'
-          : 'bg-transparent text-text-01 hover:bg-base-01 rounded-[6px]',
-      props.disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+          ? '' 
+          : 'text-text-01 hover:bg-base-01',
+      props.disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
+      $attrs.class as string
     ]"
     @click="handleClick"
   >
