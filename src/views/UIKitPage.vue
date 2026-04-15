@@ -6,9 +6,33 @@ import TabItem from '../components/TabItem.vue'
 import Input from '../components/Input.vue'
 import Chip from '../components/Chip.vue'
 import FilterPanel from '../components/FilterPanel.vue'
+import Checkbox from '../components/Checkbox.vue'
+import TestFilter from '../components/TestFilter.vue'
+import Calendar from '../components/Calendar.vue'
+import TestAllFilter from '../components/TestAllFilter.vue'
+import BottomSheet from '../components/BottomSheet.vue'
 
 const activeTab = ref('projects')
 const searchQuery = ref('')
+
+// Checkbox states
+const checked = ref(true)
+const unchecked = ref(false)
+const disabledChecked = ref(true)
+const disabledUnchecked = ref(false)
+const sizeSm = ref(false)
+const sizeMd = ref(false)
+const sizeLg = ref(false)
+
+// TestFilter
+const testFilterData = ref({
+  sports: [] as string[],
+  dateRange: { start: null as Date | null, end: null as Date | null },
+  tags: [] as string[]
+})
+
+// BottomSheet
+const showBottomSheet = ref(false)
 
 const tabs = [
   { name: 'Все', value: 'all' },
@@ -132,6 +156,32 @@ const buttonSizes = [
           <Button variant="base" size="lg" loading>
             Loading...
           </Button>
+        </div>
+      </div>
+    </section>
+    
+    <!-- Checkbox Section -->
+    <section class="mb-12">
+      <h2 class="text-xl font-semibold text-text-00 mb-4">Checkbox</h2>
+      
+      <!-- States -->
+      <div class="mb-8">
+        <h3 class="text-lg font-medium text-text-01 mb-4">States</h3>
+        <div class="flex flex-col gap-4 bg-white p-4 rounded-card">
+          <Checkbox v-model="checked" label="Бег" />
+          <Checkbox v-model="unchecked" label="Плавание" />
+          <Checkbox v-model="disabledChecked" label="Велоспорт" disabled />
+          <Checkbox v-model="disabledUnchecked" label="Теннис" disabled />
+        </div>
+      </div>
+      
+      <!-- Sizes -->
+      <div class="mb-8">
+        <h3 class="text-lg font-medium text-text-01 mb-4">Sizes</h3>
+        <div class="flex flex-col gap-4 bg-white p-4 rounded-card">
+          <Checkbox v-model="sizeSm" label="Small" size="sm" />
+          <Checkbox v-model="sizeMd" label="Medium" size="md" />
+          <Checkbox v-model="sizeLg" label="Large" size="lg" />
         </div>
       </div>
     </section>
@@ -299,44 +349,94 @@ const buttonSizes = [
     <section class="mb-12">
       <h2 class="text-xl font-semibold text-text-00 mb-4">Chip</h2>
       
-      <!-- Sizes -->
+      <!-- Variants -->
       <div class="mb-8">
-        <h3 class="text-lg font-medium text-text-01 mb-4">Sizes</h3>
-        <div class="flex flex-wrap gap-2 items-center bg-white p-4 rounded-card">
-          <Chip label="Small" size="sm" />
-          <Chip label="Medium" size="md" />
-          <Chip label="Large" size="lg" />
+        <h3 class="text-lg font-medium text-text-01 mb-4">Variants</h3>
+        <div class="flex flex-col gap-4 bg-white p-4 rounded-card">
+          <div class="flex flex-wrap gap-2">
+            <Chip label="Secondary" variant="secondary" />
+            <Chip label="Base" variant="base" />
+            <Chip label="Outline" variant="outline" />
+            <Chip label="Outline-Subtitle" variant="outline-subtitle" />
+            <Chip label="White" variant="white" />
+          </div>
         </div>
       </div>
       
       <!-- States -->
       <div class="mb-8">
-        <h3 class="text-lg font-medium text-text-01 mb-4">States</h3>
-        <div class="flex flex-wrap gap-2 items-center bg-white p-4 rounded-card">
-          <Chip label="Default" />
-          <Chip label="Selected" variant="selected" />
-          <Chip label="Disabled" disabled />
+        <h3 class="text-lg font-medium text-text-01 mb-4">States (hover/press automatically)</h3>
+        <div class="flex flex-col gap-4 bg-white p-4 rounded-card">
+          <div class="flex flex-wrap gap-2">
+            <Chip label="Secondary" variant="secondary" />
+            <Chip label="Base" variant="base" />
+            <Chip label="Outline" variant="outline" />
+            <Chip label="White" variant="white" />
+            <Chip label="Disabled" variant="secondary" disabled />
+          </div>
         </div>
       </div>
       
-      <!-- Categories (from Figma) -->
+      <!-- With Icons -->
       <div class="mb-8">
-        <h3 class="text-lg font-medium text-text-01 mb-4">Categories (Filters)</h3>
-        <div class="flex flex-wrap gap-2 items-center bg-white p-4 rounded-card">
-          <Chip label="Проекты" variant="selected" />
-          <Chip label="Путешествия" />
-          <Chip label="Спорт" />
+        <h3 class="text-lg font-medium text-text-01 mb-4">With Icons</h3>
+        <div class="flex flex-col gap-4 bg-white p-4 rounded-card">
+          <div class="flex flex-wrap gap-2">
+            <Chip label="Icon Left" variant="base" :icon-left="true" />
+            <Chip label="Icon Right" variant="base" :icon-right="true" />
+            <Chip label="Both Icons" variant="base" :icon-left="true" :icon-right="true" />
+          </div>
         </div>
       </div>
       
-      <!-- Closeable -->
+      <!-- With Number -->
       <div class="mb-8">
-        <h3 class="text-lg font-medium text-text-01 mb-4">Closeable</h3>
-        <div class="flex flex-wrap gap-2 items-center bg-white p-4 rounded-card">
-          <Chip label="Проекты" variant="selected" closeable />
-          <Chip label="Путешествия" closeable />
-          <Chip label="Спорт" closeable />
+        <h3 class="text-lg font-medium text-text-01 mb-4">With Number</h3>
+        <div class="flex flex-col gap-4 bg-white p-4 rounded-card">
+          <div class="flex flex-wrap gap-2">
+            <Chip label="Все" variant="base" :number="1" />
+            <Chip label="Проекты" variant="secondary" :number="5" />
+            <Chip label="Путешествия" variant="outline" :number="3" />
+          </div>
         </div>
+      </div>
+    </section>
+    
+    <!-- TestFilter Section -->
+    <section class="mb-12">
+      <h2 class="text-xl font-semibold text-text-00 mb-4">TestFilter</h2>
+      
+      <div class="bg-white p-4 rounded-card">
+        <TestFilter v-model="testFilterData" />
+      </div>
+    </section>
+    
+    <!-- Calendar Section -->
+    <section class="mb-12">
+      <h2 class="text-xl font-semibold text-text-00 mb-4">Calendar</h2>
+      
+      <div class="bg-white p-4 rounded-card">
+        <Calendar />
+      </div>
+    </section>
+
+    <!-- TestAllFilter Section -->
+    <section class="mb-12">
+      <h2 class="text-xl font-semibold text-text-00 mb-4">TestAllFilter</h2>
+
+      <div class="bg-[#ece6ef] p-4 rounded-card">
+        <TestAllFilter />
+      </div>
+    </section>
+    
+    <!-- BottomSheet Section -->
+    <section class="mb-12">
+      <h2 class="text-xl font-semibold text-text-00 mb-4">BottomSheet</h2>
+      
+      <div class="bg-white p-4 rounded-card">
+        <Button @click="showBottomSheet = true" variant="primary" size="md">
+          Открыть Bottom Sheet
+        </Button>
       </div>
     </section>
     
@@ -382,4 +482,32 @@ const buttonSizes = [
       </div>
     </section>
   </div>
+  
+  <!-- BottomSheet Demo -->
+  <BottomSheet v-model="showBottomSheet" title="Демо Bottom Sheet">
+    <div class="space-y-4">
+      <p class="text-gray-600">Это содержимое bottom sheet. Здесь может быть любой контент.</p>
+      
+      <div class="flex flex-col space-y-2">
+        <Checkbox v-model="sizeSm" label="Опция 1" size="sm" />
+        <Checkbox v-model="sizeMd" label="Опция 2" size="md" />
+        <Checkbox v-model="sizeLg" label="Опция 3" size="lg" />
+      </div>
+      
+      <div class="pt-4">
+        <Input placeholder="Введите текст..." />
+      </div>
+    </div>
+    
+    <template #footer>
+      <div class="flex space-x-3">
+        <Button @click="showBottomSheet = false" variant="outline" size="md" class="flex-1">
+          Отмена
+        </Button>
+        <Button @click="showBottomSheet = false" variant="primary" size="md" class="flex-1">
+          Сохранить
+        </Button>
+      </div>
+    </template>
+  </BottomSheet>
 </template>
