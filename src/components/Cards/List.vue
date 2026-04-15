@@ -1,15 +1,24 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useMapStore } from '../../stores/map'
 import type { Marker } from '../../data/mock'
+import Chip from '../Chip.vue'
+import EmptyState from '../EmptyState.vue'
 
 const emit = defineEmits<{
   'select-project': [project: Marker]
+  'open-filter': []
 }>()
 
 const mapStore = useMapStore()
 
 const markers = computed(() => mapStore.filteredMarkers)
+const showCityChips = computed(() => mapStore.locations.length > 0)
+const selectedCity = computed(() => mapStore.cityFilter)
+
+onMounted(() => {
+  mapStore.fetchFilterOptions()
+})
 
 const handleClick = (marker: Marker) => {
   if (marker.category === 'projects') {
@@ -31,10 +40,28 @@ const getProgressProps = (marker: Marker) => {
   const strokeDashoffset = circumference - (progress / 100) * circumference
   return { strokeDasharray, strokeDashoffset, progress }
 }
+
+const handleCityClick = (city: string) => {
+  mapStore.setCityFilter(selectedCity.value === city ? null : city)
+}
+
+const handleOpenFilter = () => {
+  emit('open-filter')
+}
 </script>
 
 <template>
   <div class="w-[409px] bg-white rounded-card border border-border flex flex-col max-h-[calc(100vh-300px)] overflow-y-auto">
+    <div v-if="showCityChips" class="p-3 border-b border-border flex flex-wrap gap-2">
+      <Chip
+        v-for="city in mapStore.locations"
+        :key="city"
+        :label="city"
+        :variant="selectedCity === city ? 'secondary' : 'base'"
+        @click="handleCityClick(city)"
+      />
+    </div>
+    
     <div 
       v-for="marker in markers" 
       :key="marker.id"
@@ -96,8 +123,26 @@ const getProgressProps = (marker: Marker) => {
       </div>
     </div>
     
-    <div v-if="markers.length === 0" class="p-4 text-center text-text-01 text-sm">
-      Ничего не найдено
+    <EmptyState
+      v-if="markers.length === 0"
+      icon="search"
+      title="Ничего не найдено"
+      description="Измените параметры поиска"
+    />
+
+    <div 
+      v-if="markers.length > 0"
+      class="p-3 border-t border-border"
+    >
+      <button 
+        class="flex items-center gap-2 text-sm text-primary font-medium"
+        @click="handleOpenFilter"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+        </svg>
+        Фильтр
+      </button>
     </div>
   </div>
 </template>
