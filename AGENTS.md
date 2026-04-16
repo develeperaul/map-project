@@ -6,13 +6,17 @@ Vue 3 + Yandex Maps 3 + Pinia + Router + Tailwind
 
 ### Работающие компоненты
 - YMaps 3 подключен через vuefy
-- MapView.vue - карта с маркерами (пины для projects/sport, точки для travel)
+- MapView.vue - карта с маркерами и синхронизацией selection → mapCenter/mapZoom
 - Cards/Index.vue - контейнер карточек
 - Cards/Main.vue - табы категорий + поиск
-- Cards/Filter.vue - chips фильтры (только для projects)
-- Cards/List.vue - список элементов с прогресс-кольцами
-- Cards/Description.vue - описание выбранного элемента
-- Cards/TaskList.vue - список задач проекта
+- Cards/Filter.vue - фильтры (только для projects)
+- Cards/List.vue - desktop список элементов, группировка по годам, fake loading, status chips
+- Cards/TaskList.vue - список задач проекта + active row + автоскролл
+- Cards/Description.vue - desktop detail + slider задач проекта
+- Cards/selection.ts - резолвер selection по marker/task id
+- CardsMobile/* - мобильная карточная навигация
+- Calendar.vue / DateItem.vue - календарь диапазона дат
+- EmptyState.vue - универсальное пустое состояние
 - Button.vue - кнопки с variants (primary, secondary, base, outline, ghost, white) и sizes (sm, md, lg, xl)
 - Input.vue - инпут с иконками
 - Chip.vue - чип компонент
@@ -48,17 +52,28 @@ src/
 │   ├── Chip.vue           # Чип
 │   ├── Tabs.vue          # Табы
 │   ├── TabItem.vue       # Элемент таба
+│   ├── EmptyState.vue     # Пустое состояние
+│   ├── Calendar.vue       # Диапазон дат
+│   ├── DateItem.vue       # Ячейка календаря
 │   └── Cards/
 │       ├── Index.vue      # Контейнер карточек
 │       ├── Main.vue       # Табы + поиск
 │       ├── Filter.vue    # Chips фильтры
-│       ├── List.vue      # Список элементов
-│       ├── Description.vue # Описание элемента
-│       └── TaskList.vue  # Список задач проекта
+│       ├── List.vue      # Desktop список элементов
+│       ├── Description.vue # Desktop detail + slider задач
+│       ├── TaskList.vue  # Список задач проекта
+│       ├── selection.ts  # Selection resolver
+│       └── *.spec.ts     # Тесты карточек
+│   └── CardsMobile/
+│       ├── Index.vue     # Mobile cards container
+│       ├── List.vue      # Mobile list
+│       ├── Description.vue # Mobile description
+│       ├── TaskList.vue  # Mobile task list
+│       └── Tabs.vue      # Mobile tabs
 ├── views/
 │   ├── MapPage.vue        # Страница карты
-│   ├── UIKitPage.vue    # Демо UI компонентов
-│   └── AuthView.vue     # Авторизация
+│   ├── UIKitPage.vue      # Демо UI компонентов
+│   └── AuthView.vue       # Авторизация
 ├── router/index.ts        # Роутер
 ├── App.vue               # Загрузка спрайта
 └── main.ts
@@ -82,15 +97,17 @@ export interface Marker {
 ```
 
 ### Логика работы
-1. По умолчанию: все маркеры на карте, карточки скрыты
+1. По умолчанию: главная панель видна, карточки скрыты
 2. При выборе таба (Проекты/Путешествия/Спорт):
-   - Карта центруется и зумится на маркеры категории
-   - Показываются List + Description
-   - Для projects: + Filter (chips)
-3. При клике на проект: открывается TaskList (задачи)
-4. При клике на задачу/элемент: открывается Description справа
-5. Поиск фильтрует по title
-6. Анимация карты и маркеров при переключении
+   - карта центруется и зумится на маркеры категории
+   - показываются List + Description
+   - для projects: + Filter (chips)
+3. При клике на проект: открывается TaskList и slider задач в Description
+4. При клике на задачу/элемент или маркер на карте: открывается соответствующий item
+5. Для `all`-состояния карточки открываются после клика по маркеру, таб не меняется
+6. Автоскролл активного элемента ставит его в верх списка
+7. Поиск фильтрует по title
+8. Анимация карты и маркеров при переключении
 
 ## Figma
 

@@ -25,6 +25,7 @@ const isExpanded = ref(false)
 const marker = computed(() => mapStore.selectedMarker)
 const hasTasks = computed(() => props.tasks.length > 0)
 
+// Если есть задачи, показываем активную задачу, иначе сам маркер.
 const currentTask = computed(() => {
   if (!hasTasks.value) return marker.value
   return props.tasks[Math.min(props.taskIndex, props.tasks.length - 1)] || marker.value
@@ -53,6 +54,7 @@ const formatMonthYear = (dateStr: string) => {
   return `${monthNames[date.getMonth()]} ${date.getFullYear()}`
 }
 
+// Длинный текст сворачиваем, пока пользователь не раскроет его вручную.
 const displayedDescription = computed(() => {
   const text = currentTask.value?.description || ''
   if (isExpanded.value || text.length <= 120) {

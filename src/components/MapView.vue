@@ -10,6 +10,7 @@ const mapStore = useMapStore()
 
 const duration = ref(800)
 
+// Если есть поиск или выбрана категория, показываем уже отфильтрованный набор.
 const displayedMarkers = computed(() => {
   if (mapStore.searchQuery || mapStore.category !== 'all') {
     return mapStore.filteredMarkers
@@ -17,6 +18,7 @@ const displayedMarkers = computed(() => {
   return mapStore.allMarkers
 })
 
+// Подбираем центр и zoom так, чтобы все точки категории поместились в экран.
 function calculateBounds(markers: MarkerType[]) {
   if (markers.length === 0) return null
 
@@ -55,7 +57,7 @@ function onMarkerClick(marker: MarkerType) {
   mapStore.selectMarker(marker)
 }
 
-// Watch: переключение таба → зум на категорию
+// При смене категории двигаем карту к ее границам.
 watch(() => mapStore.category, (category) => {
   if (category !== 'all') {
     const bounds = calculateBounds(mapStore.filteredMarkers)
@@ -66,7 +68,7 @@ watch(() => mapStore.category, (category) => {
   }
 })
 
-// Watch: выбор маркера → зум на маркер
+// При выборе точки приближаем карту к ней.
 watch(() => mapStore.selectedMarker, (marker) => {
   if (marker) {
     mapStore.mapCenter = marker.coordinates

@@ -6,6 +6,7 @@ export type SelectionTarget =
   | { kind: 'marker'; marker: Marker }
 
 export function resolveSelection(marker: Marker): SelectionTarget {
+  // Сначала пытаемся понять, не является ли кликнутый элемент самим проектом.
   const project = mockMarkers.find(item => item.id === marker.id)
 
   if (project) {
@@ -16,6 +17,7 @@ export function resolveSelection(marker: Marker): SelectionTarget {
     return { kind: 'marker', marker: project }
   }
 
+  // Если это не проект, ищем его среди задач проектов.
   for (const item of mockMarkers) {
     const taskIndex = item.tasks?.findIndex(task => task.id === marker.id) ?? -1
     if (taskIndex >= 0 && item.tasks) {

@@ -98,6 +98,7 @@ const scrollToItem = (id: string | null) => {
   el?.scrollIntoView?.({ block: 'start' })
 }
 
+// Небольшая задержка имитирует перерисовку списка после смены фильтров.
 const runFakeLoading = () => {
   isLoading.value = true
 
@@ -113,6 +114,7 @@ const runFakeLoading = () => {
 
 watch([markers, selectedStatus], runFakeLoading, { immediate: true })
 
+// После обновления списка прокручиваем к активному элементу.
 watch([selectedMarkerId, markers, isLoading], async ([id]) => {
   if (!id || isLoading.value) return
   await nextTick()

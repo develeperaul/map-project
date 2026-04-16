@@ -38,6 +38,7 @@ const handleDateSelect = (range: { start: Date | null; end: Date | null }) => {
   tempDateRange.value = range
 }
 
+// Фиксируем временный диапазон только после явного применения.
 const handleDateApply = () => {
   if (tempDateRange.value.start && tempDateRange.value.end) {
     const format = (d: Date) => {
@@ -82,6 +83,7 @@ const handleTagToggle = (tagId: number) => {
   }
 }
 
+// Сбрасываем и локальные, и сторовые фильтры одним действием.
 const handleReset = () => {
   mapStore.resetFilters()
   selectedSportTypes.value = []

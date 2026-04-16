@@ -17,6 +17,7 @@ const categories = [
   { name: 'Спорт', value: 'sport' as Category, icon: 'sport', color: 'text-purple', bgColor: 'bg-purple' },
 ] as const
 
+// Подхватываем категорию, если она уже выбрана в сторе.
 onMounted(() => {
   if (mapStore.category !== 'all') {
     activeTab.value = mapStore.category

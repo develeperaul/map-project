@@ -64,6 +64,7 @@ const scrollToItem = (id: string | null) => {
   el?.scrollIntoView?.({ block: 'start' })
 }
 
+// Активная задача должна оставаться видимой после переключения.
 watch([activeTaskId, tasks], async ([id]) => {
   await nextTick()
   scrollToItem(id)

@@ -24,6 +24,7 @@ const showTaskList = computed(() => selectedProject.value !== null)
 
 const selectedProjectTasks = computed(() => selectedProject.value?.tasks || [])
 
+// Держим карту и список задач в одном активном состоянии.
 watch([selectedProject, selectedTaskIndex], () => {
   const task = selectedProjectTasks.value[selectedTaskIndex.value]
   if (task) {
@@ -31,6 +32,7 @@ watch([selectedProject, selectedTaskIndex], () => {
   }
 }, { immediate: true })
 
+// Определяем, это проект, задача или обычная точка, и открываем нужный экран.
 const applyResolvedSelection = (marker: Marker) => {
   const resolved = resolveSelection(marker)
 
@@ -55,6 +57,7 @@ const applyResolvedSelection = (marker: Marker) => {
   selectedTaskIndex.value = 0
 }
 
+// При смене категории сбрасываем вложенный выбор и фильтр-панель.
 watch(() => mapStore.category, () => {
   selectedProject.value = null
   selectedTaskIndex.value = 0
@@ -62,6 +65,7 @@ watch(() => mapStore.category, () => {
   mapStore.clearSelection()
 })
 
+// Выбор на карте должен сразу отражаться в карточках справа.
 watch(() => mapStore.selectedMarker, (marker) => {
   if (!marker) return
   mapStore.showFilterPanel = false

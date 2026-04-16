@@ -15,6 +15,7 @@ const props = withDefaults(defineProps<Props>(), {
   size: 44,
 })
 
+// Внешний вид зависит от типа точки на карте.
 const categoryConfig = {
   projects: {
     bg: 'bg-primary',
