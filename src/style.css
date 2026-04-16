@@ -22,6 +22,13 @@
   --color-white: #FFFFFF;
   --color-border: #E5E4E7;
   
+  --color-secondary-dark: #343A40;
+  --color-text-dark: #24292C;
+  --color-text-muted: #898E94;
+  --color-base-light-00: #F3F4F6;
+  --color-base-light-01: #E6E7E8;
+  --color-base-light-02: #D7D8D9;
+  
   --color-warning: #FF9800;
   --color-warning-10: rgba(255, 152, 0, 0.1);
   --color-orange: #FF9800;

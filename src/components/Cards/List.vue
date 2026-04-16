@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useMapStore } from '../../stores/map'
 import type { Marker } from '../../data/mock'
 import Chip from '../Chip.vue'
@@ -11,14 +11,57 @@ const emit = defineEmits<{
 }>()
 
 const mapStore = useMapStore()
+const isLoading = ref(true)
+let loadingTimer: ReturnType<typeof setTimeout> | null = null
+const rowRefs = ref<Record<string, HTMLElement | null>>({})
 
 const markers = computed(() => mapStore.filteredMarkers)
-const showCityChips = computed(() => mapStore.locations.length > 0)
-const selectedCity = computed(() => mapStore.cityFilter)
+const selectedMarkerId = computed(() => mapStore.selectedMarker?.id ?? null)
 
-onMounted(() => {
-  mapStore.fetchFilterOptions()
+const statusChips = computed(() => {
+  const items = markers.value
+  const activeCount = items.filter(marker => typeof marker.status === 'number').length
+  const completedCount = items.filter(marker => marker.status === 'completed').length
+
+  return [
+    { label: `Все (${items.length})`, value: 'all' as const },
+    { label: `В процессе (${activeCount})`, value: 'active' as const },
+    { label: `Завершенные (${completedCount})`, value: 'completed' as const }
+  ]
 })
+
+const visibleMarkers = computed(() => {
+  if (mapStore.statusFilter === 'active') {
+    return markers.value.filter(marker => typeof marker.status === 'number')
+  }
+
+  if (mapStore.statusFilter === 'completed') {
+    return markers.value.filter(marker => marker.status === 'completed')
+  }
+
+  return markers.value
+})
+
+const groupedMarkers = computed(() => {
+  const groups = new Map<number, Marker[]>()
+
+  for (const marker of visibleMarkers.value) {
+    const year = new Date(marker.date).getFullYear()
+    if (!groups.has(year)) {
+      groups.set(year, [])
+    }
+    groups.get(year)!.push(marker)
+  }
+
+  return [...groups.entries()]
+    .sort((left, right) => right[0] - left[0])
+    .map(([year, items]) => ({
+      year,
+      items: items.sort((left, right) => right.date.localeCompare(left.date))
+    }))
+})
+
+const selectedStatus = computed(() => mapStore.statusFilter)
 
 const handleClick = (marker: Marker) => {
   if (marker.category === 'projects') {
@@ -30,119 +73,141 @@ const handleClick = (marker: Marker) => {
 
 const isSelected = (marker: Marker) => mapStore.selectedMarker?.id === marker.id
 
-const isActive = (marker: Marker) => typeof marker.status === 'number'
-const isCompleted = (marker: Marker) => marker.status === 'completed'
-
-const getProgressProps = (marker: Marker) => {
-  const circumference = 2 * Math.PI * 10
-  const progress = typeof marker.status === 'number' ? marker.status : 0
-  const strokeDasharray = `${circumference} ${circumference}`
-  const strokeDashoffset = circumference - (progress / 100) * circumference
-  return { strokeDasharray, strokeDashoffset, progress }
+const getStatusLabel = (marker: Marker) => {
+  if (marker.status === 'completed') return 'Завершен'
+  return 'В процессе'
 }
 
-const handleCityClick = (city: string) => {
-  mapStore.setCityFilter(selectedCity.value === city ? null : city)
+const getStartYear = (marker: Marker) => new Date(marker.date).getFullYear()
+
+const handleStatusClick = (status: 'all' | 'active' | 'completed') => {
+  mapStore.setStatusFilter(status)
 }
 
 const handleOpenFilter = () => {
   emit('open-filter')
 }
+
+const setRowRef = (id: string, el: Element | null) => {
+  rowRefs.value[id] = el instanceof HTMLElement ? el : null
+}
+
+const scrollToItem = (id: string | null) => {
+  if (!id) return
+  const el = rowRefs.value[id]
+  el?.scrollIntoView?.({ block: 'start' })
+}
+
+const runFakeLoading = () => {
+  isLoading.value = true
+
+  if (loadingTimer) {
+    clearTimeout(loadingTimer)
+  }
+
+  loadingTimer = setTimeout(() => {
+    isLoading.value = false
+    loadingTimer = null
+  }, 350)
+}
+
+watch([markers, selectedStatus], runFakeLoading, { immediate: true })
+
+watch([selectedMarkerId, markers, isLoading], async ([id]) => {
+  if (!id || isLoading.value) return
+  await nextTick()
+  scrollToItem(id)
+}, { flush: 'post' })
+
+onBeforeUnmount(() => {
+  if (loadingTimer) {
+    clearTimeout(loadingTimer)
+  }
+})
+
+defineExpose({
+  scrollToItem,
+})
 </script>
 
 <template>
   <div class="w-[409px] bg-white rounded-card border border-border flex flex-col max-h-[calc(100vh-300px)] overflow-y-auto">
-    <div v-if="showCityChips" class="p-3 border-b border-border flex flex-wrap gap-2">
+    <div class="p-3 border-b border-border flex flex-wrap gap-2">
       <Chip
-        v-for="city in mapStore.locations"
-        :key="city"
-        :label="city"
-        :variant="selectedCity === city ? 'secondary' : 'base'"
-        @click="handleCityClick(city)"
+        v-for="chip in statusChips"
+        :key="chip.value"
+        :label="chip.label"
+        :variant="selectedStatus === chip.value ? 'secondary' : 'base'"
+        @click="handleStatusClick(chip.value)"
       />
     </div>
+
+    <div class="p-3 border-b border-border">
+      <button
+        class="w-full h-12 rounded-button bg-base-00 text-text-00 font-medium flex items-center justify-center gap-2"
+        @click="handleOpenFilter"
+      >
+        Фильтр
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+        </svg>
+      </button>
+    </div>
     
-    <div 
-      v-for="marker in markers" 
-      :key="marker.id"
-      class="px-4 py-3 border-b border-border last:border-b-0 cursor-pointer hover:bg-base-00 transition-colors"
-      :class="{ 'bg-primary-10': isSelected(marker) }"
-      @click="handleClick(marker)"
-    >
-      <div class="flex items-center gap-3">
-        <div class="w-6 h-6 flex-shrink-0 relative">
-          <svg class="w-6 h-6 -rotate-90" viewBox="0 0 24 24">
-            <circle
-              cx="12"
-              cy="12"
-              r="10"
-              fill="none"
-              stroke="#E5E4E7"
-              stroke-width="2"
-            />
-            <circle
-              v-if="isActive(marker)"
-              cx="12"
-              cy="12"
-              r="10"
-              fill="none"
-              stroke="#4527A0"
-              stroke-width="2"
-              stroke-linecap="round"
-              v-bind="getProgressProps(marker)"
-            />
-            <circle
-              v-else-if="isCompleted(marker)"
-              cx="12"
-              cy="12"
-              r="10"
-              fill="#1A1A1A"
-            />
-          </svg>
-          <svg 
-            v-if="isCompleted(marker)" 
-            class="w-3 h-3 absolute inset-0 m-auto text-white" 
-            fill="none" 
-            stroke="currentColor" 
-            viewBox="0 0 24 24"
+    <div v-if="isLoading" class="flex min-h-[420px] items-center justify-center">
+      <div class="flex flex-col items-center gap-3 text-text-01">
+        <div
+          class="h-8 w-8 animate-spin rounded-full border-2 border-border border-t-primary"
+          aria-label="Загрузка списка"
+        ></div>
+      </div>
+    </div>
+
+    <div v-else v-for="group in groupedMarkers" :key="group.year">
+      <div class="px-4 pt-6 pb-4 flex items-center justify-between text-sm text-text-00">
+        <span>{{ group.year }}</span>
+        <span class="text-text-01">({{ group.items.length }})</span>
+      </div>
+
+      <div 
+        v-for="marker in group.items" 
+        :key="marker.id"
+        class="px-4 py-3 border-b border-border last:border-b-0 cursor-pointer hover:bg-base-00 transition-colors"
+        :class="{ 'bg-base-00': isSelected(marker) }"
+        :ref="el => setRowRef(marker.id, el)"
+        @click="handleClick(marker)"
+      >
+        <div class="flex items-start gap-3">
+          <div
+            v-if="marker.status === 'completed'"
+            class="mt-1 flex h-3 w-3 flex-shrink-0 items-center justify-center rounded-full bg-text-00 text-white"
           >
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
-          </svg>
-        </div>
-        
-        <img 
-          v-if="marker.images?.[0]?.url" 
-          :src="marker.images[0].url" 
-          :alt="marker.title"
-          class="w-10 h-10 rounded object-cover flex-shrink-0"
-        >
-        <div class="flex-1 min-w-0">
-          <h3 class="text-sm font-medium text-text-00 truncate">{{ marker.title }}</h3>
-          <p class="text-xs text-text-01 truncate">{{ marker.description }}</p>
+            <svg class="h-2 w-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+
+          <div v-else class="mt-1 flex h-3 w-3 flex-shrink-0 items-center justify-center rounded-full border border-primary bg-white">
+            <div class="h-1.5 w-1.5 rounded-full bg-primary"></div>
+          </div>
+
+          <div class="min-w-0 flex-1">
+            <h3 class="text-base font-medium text-text-00 truncate">{{ marker.title }}</h3>
+            <p class="mt-1 text-sm text-text-01 truncate">{{ marker.description }}</p>
+            <p class="mt-1 text-sm text-text-01">
+              Старт: {{ getStartYear(marker) }} • Финиш: {{ getStatusLabel(marker) }}
+            </p>
+          </div>
         </div>
       </div>
     </div>
     
     <EmptyState
-      v-if="markers.length === 0"
+      v-if="!isLoading && visibleMarkers.length === 0"
       icon="search"
       title="Ничего не найдено"
       description="Измените параметры поиска"
     />
 
-    <div 
-      v-if="markers.length > 0"
-      class="p-3 border-t border-border"
-    >
-      <button 
-        class="flex items-center gap-2 text-sm text-primary font-medium"
-        @click="handleOpenFilter"
-      >
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-        </svg>
-        Фильтр
-      </button>
-    </div>
   </div>
 </template>

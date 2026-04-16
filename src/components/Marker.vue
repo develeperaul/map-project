@@ -5,11 +5,13 @@ import BaseIcon from './BaseIcon.vue'
 interface Props {
   category: 'projects' | 'travel' | 'sport'
   state?: 'default' | 'hover' | 'click'
+  active?: boolean
   size?: number
 }
 
 const props = withDefaults(defineProps<Props>(), {
   state: 'default',
+  active: false,
   size: 44,
 })
 
@@ -49,7 +51,7 @@ const config = computed(() => categoryConfig[props.category])
 </script>
 
 <template>
-  <div v-if="isCircle" class="relative flex items-center justify-center marker-wrapper">
+  <div v-if="isCircle" class="relative flex items-center justify-center marker-wrapper" :class="{ active: props.active }">
     <div 
       class="w-10 h-10 rounded-full border-2 border-white shadow-lg transition-transform flex items-center justify-center"
       :class="[
@@ -62,7 +64,7 @@ const config = computed(() => categoryConfig[props.category])
     </div>
   </div>
 
-  <svg v-else-if="isPin" class="marker-wrapper" width="50" height="67" viewBox="0 0 50 67" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <svg v-else-if="isPin" class="marker-wrapper" :class="{ active: props.active }" width="50" height="67" viewBox="0 0 50 67" fill="none" xmlns="http://www.w3.org/2000/svg">
       <g filter="url(#filter0_dd_348_42128)">
         <rect x="3" width="44" height="44" rx="22" fill="white" shape-rendering="crispEdges"/>
         <foreignObject x="5" y="2" width="40" height="40">

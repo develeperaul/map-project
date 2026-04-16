@@ -1,116 +1,133 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 
 import type { Marker } from '../../data/mock'
-import BaseIcon from '../BaseIcon.vue';
+import BaseIcon from '../BaseIcon.vue'
 
 interface Props {
   project: Marker
+  activeTaskIndex?: number
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  activeTaskIndex: 0,
+})
 
 const emit = defineEmits<{
   back: []
-  selectTask: [task: Marker]
+  selectTask: [task: Marker, index: number]
 }>()
 
 const tasks = computed(() => props.project.tasks || [])
+const taskRefs = ref<Record<string, HTMLElement | null>>({})
 
-const completedCount = computed(() => {
-  return tasks.value.filter(t => t.status === 'completed').length
-})
-
+const completedCount = computed(() => tasks.value.filter(task => task.status === 'completed').length)
 const totalCount = computed(() => tasks.value.length)
 
-const isActive = (status: number | 'completed' | undefined) => typeof status === 'number'
 const isCompleted = (status: number | 'completed' | undefined) => status === 'completed'
 
-const getProgressProps = (status: number | 'completed' | undefined) => {
-  const progress = typeof status === 'number' ? status : 0
-  const circumference = 2 * Math.PI * 10
-  const strokeDasharray = `${circumference} ${circumference}`
-  const strokeDashoffset = circumference - (progress / 100) * circumference
-  return { strokeDasharray, strokeDashoffset, progress }
+const monthNames = [
+  'Январь',
+  'Февраль',
+  'Март',
+  'Апрель',
+  'Май',
+  'Июнь',
+  'Июль',
+  'Август',
+  'Сентябрь',
+  'Октябрь',
+  'Ноябрь',
+  'Декабрь',
+]
+
+const formatMonthYear = (dateStr: string) => {
+  const date = new Date(dateStr)
+  return `${monthNames[date.getMonth()]} ${date.getFullYear()}`
 }
 
-const handleTaskClick = (task: Marker) => {
-  emit('selectTask', task)
+const projectStartYear = computed(() => new Date(props.project.date).getFullYear())
+const projectEndLabel = computed(() => (isCompleted(props.project.status) ? 'Завершен' : 'В процессе'))
+const activeTaskId = computed(() => tasks.value[props.activeTaskIndex]?.id ?? null)
+
+const handleTaskClick = (task: Marker, index: number) => {
+  emit('selectTask', task, index)
 }
+
+const setTaskRef = (id: string, el: Element | null) => {
+  taskRefs.value[id] = el instanceof HTMLElement ? el : null
+}
+
+const scrollToItem = (id: string | null) => {
+  if (!id) return
+  const el = taskRefs.value[id]
+  el?.scrollIntoView?.({ block: 'start' })
+}
+
+watch([activeTaskId, tasks], async ([id]) => {
+  await nextTick()
+  scrollToItem(id)
+}, { flush: 'post', immediate: true })
+
+defineExpose({
+  scrollToItem,
+})
 </script>
 
 <template>
   <div class="w-[409px] bg-white rounded-card border border-border flex flex-col">
-    <div class="p-4 border-b border-border flex items-center gap-3">
-      <button 
-        class="text-text-01 hover:text-text-00 transition-colors"
-        @click="emit('back')"
-      >
-        <BaseIcon name="arrow-left" class="w-5 h-5" />
-      </button>
-      <h3 class="text-base font-medium text-text-00 flex-1 truncate">{{ project.title }}</h3>
-      <div class="flex items-center gap-1 text-sm text-text-01">
-        <span class="font-medium text-primary">{{ completedCount }}</span>
-        <span>/</span>
-        <span>{{ totalCount }}</span>
+    <div class="p-4 border-b border-border">
+      <div class="flex items-start gap-3">
+        <button
+          class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-button bg-base-00 text-text-01 hover:text-text-00 transition-colors"
+          @click="emit('back')"
+        >
+          <BaseIcon name="arrow-left" class="w-5 h-5" />
+        </button>
+
+        <div class="min-w-0 flex-1 text-center pr-10">
+          <h3 class="text-base font-medium text-text-00 truncate">{{ project.title }}</h3>
+          <p class="mt-1 text-sm text-text-01">Выполнено {{ completedCount }}/{{ totalCount }}</p>
+        </div>
+      </div>
+
+      <div class="mt-6 flex items-center justify-center gap-2 text-sm text-text-01">
+        <span>Старт: {{ projectStartYear }}</span>
+        <span>•</span>
+        <span>Финиш: {{ projectEndLabel }}</span>
       </div>
     </div>
-    
+
     <div class="flex-1 overflow-y-auto max-h-[calc(100vh-300px)]">
-      <div 
-        v-for="task in tasks" 
+      <div
+        v-for="(task, index) in tasks"
         :key="task.id"
-        class="px-4 py-3 border-b border-border last:border-b-0 cursor-pointer hover:bg-base-00 transition-colors"
-        @click="handleTaskClick(task)"
+        class="px-4 py-5 border-b border-border last:border-b-0 cursor-pointer hover:bg-base-00 transition-colors"
+        :class="{ 'bg-base-00': index === activeTaskIndex }"
+        :data-task-active="index === activeTaskIndex"
+        :ref="el => setTaskRef(task.id, el)"
+        @click="handleTaskClick(task, index)"
       >
-        <div class="flex items-center gap-3">
-          <div class="w-6 h-6 flex-shrink-0 relative">
-            <svg class="w-6 h-6 -rotate-90" viewBox="0 0 24 24">
-              <circle
-                cx="12"
-                cy="12"
-                r="10"
-                fill="none"
-                stroke="#E5E4E7"
-                stroke-width="2"
-              />
-              <circle
-                v-if="isActive(task.status)"
-                cx="12"
-                cy="12"
-                r="10"
-                fill="none"
-                stroke="#4527A0"
-                stroke-width="2"
-                stroke-linecap="round"
-                v-bind="getProgressProps(task.status)"
-              />
-              <circle
-                v-else-if="isCompleted(task.status)"
-                cx="12"
-                cy="12"
-                r="10"
-                fill="#1A1A1A"
-              />
-            </svg>
-            <svg 
-              v-if="isCompleted(task.status)" 
-              class="w-3 h-3 absolute inset-0 m-auto text-white" 
-              fill="none" 
-              stroke="currentColor" 
-              viewBox="0 0 24 24"
-            >
+        <div class="flex items-start gap-3">
+          <div
+            class="mt-1 flex h-3 w-3 flex-shrink-0 items-center justify-center rounded-full"
+            :class="isCompleted(task.status) ? 'bg-text-00 text-white' : 'border border-primary bg-white'"
+          >
+            <svg v-if="isCompleted(task.status)" class="h-2 w-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
             </svg>
+            <div v-else class="h-1.5 w-1.5 rounded-full bg-primary"></div>
           </div>
-          
-          <div class="flex-1 min-w-0">
-            <h4 class="text-sm font-medium text-text-00 truncate">{{ task.title }}</h4>
-            <p class="text-xs text-text-01 truncate">{{ task.description }}</p>
+
+          <div class="min-w-0 flex-1">
+            <h4 class="text-base font-medium text-text-00 truncate">{{ task.title }}</h4>
+            <p class="mt-1 text-sm text-text-01 truncate">{{ task.city }}</p>
+            <p class="mt-1 text-sm text-text-01">{{ task.description }}</p>
+            <p class="mt-1 text-sm text-text-01">{{ formatMonthYear(task.date) }}</p>
           </div>
         </div>
       </div>
-      
+
       <div v-if="tasks.length === 0" class="p-4 text-center text-text-01 text-sm">
         Нет задач
       </div>

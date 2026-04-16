@@ -1,68 +1,99 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import BaseIcon from './BaseIcon.vue'
+
 interface Props {
   label: string
-  variant?: 'default' | 'selected'
-  size?: 'sm' | 'md' | 'lg'
+  variant?: 'secondary' | 'base' | 'outline' | 'outline-subtitle' | 'white'
+  iconLeft?: boolean
+  iconRight?: boolean
+  number?: number | null
   disabled?: boolean
-  closeable?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  variant: 'default',
-  size: 'md',
+  variant: 'secondary',
+  state: 'default',
+  iconLeft: false,
+  iconRight: false,
+  number: null,
   disabled: false,
-  closeable: false,
 })
 
 const emit = defineEmits<{
   'click': []
-  'close': []
 }>()
 
-const sizeClasses = {
-  sm: 'h-6 px-2 text-xs gap-1',
-  md: 'h-8 px-3 text-sm gap-2',
-  lg: 'h-10 px-4 text-base gap-2',
-}
+const chipClasses = computed(() => {
+  const base = 'inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg font-medium text-sm leading-5 transition-colors cursor-pointer'
+  
+  if (props.disabled) {
+    return `${base} opacity-50 cursor-not-allowed`
+  }
+  
+  const variant = props.variant
+  
+  if (variant === 'secondary') {
+    return `${base} bg-secondary-dark text-white hover:bg-text-dark active:bg-text-muted`
+  }
+  
+  if (variant === 'base') {
+    return `${base} bg-base-light-00 text-text-dark hover:bg-base-light-01 active:bg-base-light-02`
+  }
+  
+  if (variant === 'outline' || variant === 'outline-subtitle') {
+    const border = 'border border-base-light-00'
+    return `${base} bg-white text-text-dark hover:bg-base-light-01 active:bg-base-light-02 ${border}`
+  }
+  
+  if (variant === 'white') {
+    return `${base} bg-white text-text-dark hover:bg-white/64 active:bg-white/80`
+  }
+  
+  return base
+})
 
-const variantClasses = {
-  default: {
-    base: 'bg-base-00 text-text-01 border border-border',
-    hover: 'hover:bg-base-01 hover:border-text-01',
-    disabled: 'bg-base-00 text-text-02 border border-border opacity-50 cursor-not-allowed',
-  },
-  selected: {
-    base: 'bg-primary-20 text-primary border border-primary',
-    hover: 'hover:bg-primary-10 hover:text-primary',
-    disabled: 'bg-primary-10 text-primary opacity-50 border border-primary cursor-not-allowed',
-  },
+const textClasses = computed(() => {
+  const base = 'font-medium text-sm leading-5'
+  if (props.variant === 'outline-subtitle') {
+    return `${base} underline`
+  }
+  return base
+})
+
+const handleClick = () => {
+  if (!props.disabled) {
+    emit('click')
+  }
 }
 </script>
 
 <template>
   <button
     type="button"
-    :disabled="props.disabled"
-    :class="[
-      'inline-flex items-center rounded-chip font-medium transition-all duration-200',
-      sizeClasses[size],
-      props.disabled 
-        ? variantClasses[props.variant].disabled 
-        : variantClasses[props.variant].base + ' ' + variantClasses[props.variant].hover
-    ]"
-    @click="emit('click')"
+    :disabled="disabled"
+    :class="chipClasses"
+    @click="handleClick"
   >
-    <span class="truncate">{{ label }}</span>
+    <BaseIcon
+      v-if="iconLeft"
+      name="filter"
+      class="w-4 h-4"
+    />
     
-    <button
-      v-if="closeable && !props.disabled"
-      type="button"
-      class="flex-shrink-0 hover:text-text-00"
-      @click.stop="emit('close')"
+    <div
+      v-if="number !== null"
+      class="bg-secondary-dark text-white text-xs px-1.5 py-0.5 rounded-full min-w-5 h-5 flex items-center justify-center"
     >
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-      </svg>
-    </button>
+      {{ number }}
+    </div>
+    
+    <span :class="textClasses">{{ label }}</span>
+    
+    <BaseIcon
+      v-if="iconRight"
+      name="filter"
+      class="w-4 h-4"
+    />
   </button>
 </template>
