@@ -6,6 +6,16 @@ import Checkbox from './Checkbox.vue'
 import Input from './Input.vue'
 import Calendar from './Calendar.vue'
 
+const props = withDefaults(defineProps<{
+  embedded?: boolean
+}>(), {
+  embedded: false,
+})
+
+const emit = defineEmits<{
+  close: []
+}>()
+
 const sportSearch = ref('')
 const locationSearch = ref('')
 
@@ -82,16 +92,21 @@ const resetFilter = () => {
   selectedLocations.value = ['Африка']
   selectedTags.value = ['#Велоспорт']
 }
+
+const handleClose = () => {
+  emit('close')
+}
 </script>
 
 <template>
-  <div class="mx-auto w-full max-w-[396px] rounded-[28px] border border-black/8 bg-white p-4 shadow-[0_18px_50px_rgba(26,26,26,0.14)]">
-    <div class="mb-4 flex items-center justify-between">
+  <div :class="props.embedded ? 'flex h-full w-full flex-col bg-white' : 'mx-auto w-full max-w-[396px] rounded-[28px] border border-black/8 bg-white p-4 shadow-[0_18px_50px_rgba(26,26,26,0.14)]'">
+    <div :class="props.embedded ? 'mb-4 flex items-center justify-between px-4 pt-4' : 'mb-4 flex items-center justify-between'">
       <h3 class="text-[20px] font-semibold leading-7 text-text-00">Фильтр</h3>
       <button
         type="button"
         class="flex h-12 w-12 items-center justify-center rounded-[12px] bg-base-00 text-text-01 transition-colors hover:bg-base-01"
         aria-label="Закрыть фильтр"
+        @click="handleClose"
       >
         <BaseIcon name="close" class="h-6 w-6" />
       </button>
@@ -99,7 +114,7 @@ const resetFilter = () => {
 
     <div class="h-[1px] bg-border" />
 
-    <div class="mt-6 h-[calc(100vh-15rem)] min-h-[720px] max-h-[1520px] space-y-8 overflow-y-auto pr-1">
+    <div :class="props.embedded ? 'mt-6 flex-1 space-y-8 overflow-y-auto px-4 pb-4 pr-1' : 'mt-6 h-[calc(100vh-15rem)] min-h-[720px] max-h-[1520px] space-y-8 overflow-y-auto pr-1'">
       <section>
         <Calendar />
       </section>
@@ -176,7 +191,7 @@ const resetFilter = () => {
       </section>
     </div>
 
-    <div class="mt-6 flex items-center gap-2">
+    <div :class="props.embedded ? 'mt-auto flex items-center gap-2 border-t border-border px-4 py-4' : 'mt-6 flex items-center gap-2'">
       <Button variant="primary" size="xl" class="flex-1">Применить</Button>
       <Button variant="base" size="xl" class="shrink-0" @click="resetFilter">Сбросить</Button>
     </div>

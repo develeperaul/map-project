@@ -1,7 +1,4 @@
 <script setup lang="ts">
-import { ref, provide } from 'vue'
-import Tabs from '../Tabs.vue'
-import TabItem from '../TabItem.vue'
 import BaseIcon from '../BaseIcon.vue'
 import type { Category } from '../../data/mock'
 
@@ -15,52 +12,33 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   'update:modelValue': [value: Category | '']
-  'open-list': []
 }>()
 
 const categories = [
-  { name: 'Проекты', value: 'projects' as Category, icon: 'project', color: 'text-primary', bgColor: 'bg-primary' },
-  { name: 'Путешествия', value: 'travel' as Category, icon: 'travel', color: 'text-orange', bgColor: 'bg-orange' },
-  { name: 'Спорт', value: 'sport' as Category, icon: 'sport', color: 'text-purple', bgColor: 'bg-purple' },
+  { name: 'Проекты', value: 'projects' as Category, icon: 'project', color: 'text-primary' },
+  { name: 'Путешествия', value: 'travel' as Category, icon: 'travel', color: 'text-orange' },
+  { name: 'Спорт', value: 'sport' as Category, icon: 'sport', color: 'text-purple' },
 ] as const
 
 const handleClick = (value: Category) => {
-  emit('update:modelValue', value)
-  emit('open-list')
-}
-
-const getTabClass = (cat: Category) => {
-  const isActive = props.modelValue === cat.value
-  return [
-    'flex-1 justify-center py-3',
-    isActive 
-      ? `${cat.bgColor} text-white` 
-      : `${cat.color} bg-transparent hover:bg-base-00`
-  ]
-}
-
-const getIconClass = (cat: Category) => {
-  return props.modelValue === cat.value ? 'text-white' : cat.color
+  emit('update:modelValue', props.modelValue === value ? '' : value)
 }
 </script>
 
 <template>
-  <div class="w-full bg-white border-b border-border">
-    <div class="flex">
-      <Tabs :model-value="modelValue" variant="pill">
-        <TabItem 
-          v-for="cat in categories" 
-          :key="cat.value" 
-          :value="cat.value"
-          :class="getTabClass(cat)"
-          @click="handleClick(cat.value)"
-        >
-          <template #icon>
-            <BaseIcon :name="cat.icon" class="shrink-0 w-5 h-5" :class="getIconClass(cat)" />
-          </template>
-          <span :class="props.modelValue === cat.value ? 'text-white' : ''">{{ cat.name }}</span>
-        </TabItem>
-      </Tabs>
+  <div class="rounded-card bg-white shadow-[0_4px_20px_rgba(20,20,20,0.08)] overflow-hidden">
+    <div class="grid grid-cols-3 gap-0 p-1">
+      <button
+        v-for="cat in categories"
+        :key="cat.value"
+        type="button"
+        class="flex flex-col items-center justify-center gap-1 rounded-[12px] px-2 py-3 transition-colors"
+        :class="props.modelValue === cat.value ? 'bg-base-00' : 'hover:bg-base-00/70'"
+        @click="handleClick(cat.value)"
+      >
+        <BaseIcon :name="cat.icon" class="h-5 w-5 shrink-0" :class="props.modelValue === cat.value ? cat.color : 'text-text-01'" />
+        <span class="text-sm leading-5" :class="props.modelValue === cat.value ? 'text-text-00' : 'text-text-01'">{{ cat.name }}</span>
+      </button>
     </div>
   </div>
 </template>

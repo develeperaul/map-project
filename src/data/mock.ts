@@ -13,7 +13,7 @@ export interface Marker {
   id: string
   title: string
   description: string
-  coordinates: [number, number]
+  coordinates?: [number, number]
   category: Category
   date: string
   city: string
@@ -28,7 +28,6 @@ export const mockMarkers: Marker[] = [
     id: '1',
     title: 'Moscow Tech Hub',
     description: 'Конференция по веб-разработке',
-    coordinates: [37.6173, 55.7558],
     category: 'projects',
     date: '2024-06-15',
     city: 'Москва',
@@ -102,7 +101,6 @@ export const mockMarkers: Marker[] = [
     id: '2',
     title: 'Startup Summit',
     description: 'Митап стартапов в центре',
-    coordinates: [37.6295, 55.7532],
     category: 'projects',
     date: '2024-07-20',
     city: 'Москва',
@@ -143,7 +141,6 @@ export const mockMarkers: Marker[] = [
     id: '3',
     title: 'AI Hackathon',
     description: 'Хакатон по искусственному интеллекту',
-    coordinates: [37.5881, 55.7856],
     category: 'projects',
     date: '2024-08-10',
     city: 'Москва',
@@ -184,7 +181,6 @@ export const mockMarkers: Marker[] = [
     id: '4',
     title: 'Vue.js Meetup',
     description: 'Встреча разработчиков Vue',
-    coordinates: [37.5424, 55.7584],
     category: 'projects',
     date: '2024-09-05',
     city: 'Москва',
@@ -202,7 +198,6 @@ export const mockMarkers: Marker[] = [
     id: '5',
     title: 'DevOps Conference',
     description: 'Конференция по DevOps практикам',
-    coordinates: [37.6112, 55.7619],
     category: 'projects',
     date: '2024-10-12',
     city: 'Москва',

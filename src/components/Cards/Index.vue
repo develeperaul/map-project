@@ -12,7 +12,8 @@ import { resolveSelection } from './selection'
 const mapStore = useMapStore()
 
 const showContent = computed(() => (
-  mapStore.selectedMarker !== null
+  mapStore.category !== 'all'
+  || mapStore.selectedMarker !== null
   || selectedProject.value !== null
   || mapStore.showFilterPanel
 ))

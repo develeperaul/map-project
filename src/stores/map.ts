@@ -3,8 +3,6 @@ import { ref, computed } from 'vue'
 import type { Category, Marker, Tag } from '../data/mock'
 import { getMarkersByCategory, mockMarkers } from '../data/mock'
 
-const CARD_WIDTH = 204
-
 function calculateBounds(markers: Marker[]): { center: [number, number], zoom: number } | null {
   if (markers.length === 0) return null
 
@@ -12,6 +10,7 @@ function calculateBounds(markers: Marker[]): { center: [number, number], zoom: n
   let minLat = Infinity, maxLat = -Infinity
 
   for (const marker of markers) {
+    if (!marker.coordinates) continue
     const [lng, lat] = marker.coordinates
     minLng = Math.min(minLng, lng)
     maxLng = Math.max(maxLng, lng)
@@ -34,13 +33,9 @@ function calculateBounds(markers: Marker[]): { center: [number, number], zoom: n
   else if (lngDiff < 50 && latDiff < 50) zoom = 2
   else zoom = 1
 
-  const offsetLng = CARD_WIDTH * 0.015
-
   return {
     center: [centerLng, centerLat] as [number, number],
     zoom,
-    duration: 800,
-    easing: 'ease-in-out'
   }
 }
 
@@ -71,6 +66,24 @@ export const useMapStore = defineStore('map', () => {
 
   const allMarkers = computed(() => mockMarkers)
   const markers = computed(() => getMarkersByCategory(category.value as Category))
+
+  const mapMarkers = computed(() => {
+    if (category.value === 'projects') {
+      return markers.value.flatMap(project => project.tasks || [])
+    }
+
+    if (category.value === 'all') {
+      return mockMarkers.flatMap(marker => {
+        if (marker.category === 'projects') {
+          return marker.tasks || []
+        }
+
+        return [marker]
+      })
+    }
+
+    return markers.value
+  })
 
   const filteredMarkers = computed(() => {
     let result = category.value === 'all'
@@ -123,14 +136,14 @@ export const useMapStore = defineStore('map', () => {
   })
 
   const mapBounds = computed(() => {
-    const markers = filteredMarkers.value
+    const markers = mapMarkers.value.filter(marker => marker.coordinates) as Marker[]
     if (markers.length === 0) {
       return { center: [37.6173, 55.7558] as [number, number], zoom: 3 }
     }
     return calculateBounds(markers) || { center: [37.6173, 55.7558] as [number, number], zoom: 3 }
   })
 
-  function setCategory(cat: Category) {
+  function setCategory(cat: Category | 'all') {
     category.value = cat
     selectedMarker.value = null
     searchQuery.value = ''
@@ -148,8 +161,10 @@ export const useMapStore = defineStore('map', () => {
 
   function selectMarker(marker: Marker) {
     selectedMarker.value = marker
-    mapCenter.value = marker.coordinates
-    mapZoom.value = 14
+    if (marker.coordinates) {
+      mapCenter.value = marker.coordinates
+      mapZoom.value = 14
+    }
   }
 
   function clearSelection() {
@@ -205,6 +220,7 @@ export const useMapStore = defineStore('map', () => {
     markers,
     allMarkers,
     filteredMarkers,
+    mapMarkers,
     searchQuery,
     statusFilter,
     mapCenter,

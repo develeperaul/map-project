@@ -1,98 +1,117 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useMapStore } from '../../stores/map'
 import type { Category, Marker } from '../../data/mock'
 import Tabs from './Tabs.vue'
-import List from './List.vue'
-import Description from './Description.vue'
 import Search from './Search.vue'
+import List from './List.vue'
 import BottomSheet from '../BottomSheet.vue'
-import TaskList from './TaskList.vue'
+import TestAllFilter from '../TestAllFilter.vue'
 
 const mapStore = useMapStore()
 
 const activeTab = ref<Category | ''>('')
 const showList = ref(false)
-const showDescription = ref(false)
+const showFilter = ref(false)
 const showSearch = ref(false)
+const listSheetHeight = ref(0)
 
-const selectedMarker = ref<Marker | null>(null)
+const sheetOpen = computed(() => showList.value || showFilter.value)
+const showSearchField = computed(() => activeTab.value === '' && !sheetOpen.value)
+const bottomControlsStyle = computed(() => ({
+  bottom: sheetOpen.value ? `${listSheetHeight.value + 16}px` : '16px',
+}))
 
 watch(activeTab, (val) => {
   if (val) {
     mapStore.setCategory(val)
+    showList.value = true
+    showFilter.value = false
+    showSearch.value = false
+  } else {
+    mapStore.setCategory('all')
+    showList.value = false
+    showFilter.value = false
   }
 })
 
-const handleOpenList = () => {
-  showList.value = true
-}
-
-const handleCloseList = () => {
-  showList.value = false
-}
-
-const handleOpenDescription = (marker: Marker) => {
-  selectedMarker.value = marker
-  mapStore.selectMarker(marker)
-  showList.value = false
-  showDescription.value = true
-}
-
-const handleCloseDescription = () => {
-  showDescription.value = false
-  selectedMarker.value = null
-  mapStore.clearSelection()
-}
-
-const handleOpenSearch = () => {
+const openSearch = () => {
+  if (activeTab.value || sheetOpen.value) return
   showSearch.value = true
 }
 
-const handleCloseSearch = () => {
+const closeSearch = () => {
   showSearch.value = false
 }
 
-const handleSelectFromSearch = (marker: Marker) => {
+const openFilter = () => {
+  showList.value = false
+  showFilter.value = true
   showSearch.value = false
-  handleOpenDescription(marker)
+}
+
+const closeFilter = () => {
+  showFilter.value = false
+}
+
+const closeList = () => {
+  showList.value = false
+  activeTab.value = ''
+}
+
+const handleSheetHeight = (height: number) => {
+  listSheetHeight.value = height
+}
+
+const handleSelectFromSearch = (marker: Marker) => {
+  closeSearch()
+  mapStore.selectMarker(marker)
 }
 </script>
 
 <template>
   <div class="fixed inset-0 z-40 pointer-events-none">
-    <div class="absolute bottom-0 left-0 right-0 pointer-events-auto">
-      <Tabs 
-        v-model="activeTab" 
-        class="pointer-events-auto"
-        @open-list="handleOpenList"
-      />
+    <div class="absolute inset-x-0 px-4 pointer-events-auto z-[60] transition-all duration-300 ease-out" :style="bottomControlsStyle">
+      <div class="flex flex-col gap-2">
+        <Tabs v-model="activeTab" />
+
+        <Search
+          v-if="showSearchField && !showSearch"
+          mode="inline"
+          :query="mapStore.searchQuery"
+          @open="openSearch"
+        />
+      </div>
     </div>
   </div>
 
-  <BottomSheet v-model="showList" height="calc(100vh - 56px)">
-    <List 
-      @select="handleOpenDescription"
-      @close="handleCloseList"
-      @open-search="handleOpenSearch"
+  <BottomSheet
+    v-model="showList"
+    height="auto"
+    max-height="calc(100vh - 136px)"
+    @height-change="handleSheetHeight"
+  >
+    <List
+      @close="closeList"
+      @open-filter="openFilter"
+      @select="handleSelectFromSearch"
     />
   </BottomSheet>
 
-  <Search 
+  <BottomSheet
+    v-model="showFilter"
+    height="auto"
+    max-height="calc(100vh - 136px)"
+    @height-change="handleSheetHeight"
+  >
+    <TestAllFilter embedded @close="closeFilter" />
+  </BottomSheet>
+
+  <Search
     v-if="showSearch"
+    mode="overlay"
     :query="mapStore.searchQuery"
-    @close="handleCloseSearch"
+    @close="closeSearch"
     @select="handleSelectFromSearch"
   />
-
-  <BottomSheet v-model="showDescription" height="auto">
-    <Description 
-      v-if="selectedMarker"
-      :marker="selectedMarker"
-      @close="handleCloseDescription"
-    />
-  </BottomSheet>
 </template>
-
-<style scoped>
-</style>

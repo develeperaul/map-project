@@ -72,4 +72,23 @@ describe('Cards/Index', () => {
     expect(wrapper.find('[data-stub="list"]').exists()).toBe(true)
     expect(wrapper.find('[data-stub="description"]').exists()).toBe(true)
   })
+
+  it('shows the list when a tab category is selected', async () => {
+    const pinia = createPinia()
+    setActivePinia(pinia)
+
+    const store = useMapStore()
+    store.setCategory('travel')
+
+    const wrapper = mount(Index, {
+      global: {
+        plugins: [pinia],
+        stubs,
+      }
+    })
+
+    expect(wrapper.find('[data-stub="main"]').exists()).toBe(true)
+    expect(wrapper.find('[data-stub="list"]').exists()).toBe(true)
+    expect(wrapper.find('[data-stub="description"]').exists()).toBe(false)
+  })
 })
