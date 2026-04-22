@@ -24,6 +24,7 @@ const selectedTaskIndex = ref(0)
 const showTaskList = computed(() => selectedProject.value !== null)
 
 const selectedProjectTasks = computed(() => selectedProject.value?.tasks || [])
+const selectionSourceMarkers = computed(() => mapStore.allMarkers)
 
 // Держим карту и список задач в одном активном состоянии.
 watch([selectedProject, selectedTaskIndex], () => {
@@ -35,7 +36,7 @@ watch([selectedProject, selectedTaskIndex], () => {
 
 // Определяем, это проект, задача или обычная точка, и открываем нужный экран.
 const applyResolvedSelection = (marker: Marker) => {
-  const resolved = resolveSelection(marker)
+  const resolved = resolveSelection(marker, selectionSourceMarkers.value)
 
   if (resolved.kind === 'project') {
     selectedProject.value = resolved.project

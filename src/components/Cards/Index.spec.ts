@@ -3,7 +3,18 @@ import { createPinia, setActivePinia } from 'pinia'
 import { describe, expect, it } from 'vitest'
 import Index from './Index.vue'
 import { useMapStore } from '../../stores/map'
-import { mockMarkers } from '../../data/mock'
+import { mockMarkers, type Marker } from '../../data/mock'
+
+const travelMarker: Marker = {
+  id: 'travel-test',
+  title: 'Тестовое путешествие',
+  description: '',
+  coordinates: [37.6173, 55.7558],
+  category: 'travel',
+  date: '2026-04-11',
+  city: 'Москва',
+  images: [],
+}
 
 const stubs = {
   Main: { template: '<div data-stub="main" />' },
@@ -40,7 +51,7 @@ describe('Cards/Index', () => {
 
     const store = useMapStore()
     store.setCategory('travel')
-    store.selectMarker(mockMarkers[5])
+    store.selectMarker(travelMarker)
 
     const wrapper = mount(Index, {
       global: {
@@ -59,7 +70,7 @@ describe('Cards/Index', () => {
     setActivePinia(pinia)
 
     const store = useMapStore()
-    store.selectMarker(mockMarkers[5])
+    store.selectMarker(travelMarker)
 
     const wrapper = mount(Index, {
       global: {

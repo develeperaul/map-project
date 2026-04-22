@@ -68,6 +68,7 @@ const displayedDescription = computed(() => {
   if (isExpanded.value || text.length <= 120) return text
   return `${text.slice(0, 120).trimEnd()}...`
 })
+const canExpandDescription = computed(() => currentTask.value.description.length > 120)
 
 const setTaskIndex = (value: number) => {
   if (!hasTasks.value) return
@@ -194,7 +195,7 @@ watch(() => currentTask.value.id, () => {
           </div>
 
           <button
-            v-if="currentTask.description.length > 120"
+            v-if="canExpandDescription"
             type="button"
             class="mt-3 inline-flex items-center gap-2 text-sm font-medium leading-5 text-primary transition-colors hover:text-primary-hover"
             @click="isExpanded = !isExpanded"

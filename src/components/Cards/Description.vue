@@ -63,6 +63,7 @@ const displayedDescription = computed(() => {
 
   return `${text.slice(0, 120).trimEnd()}...`
 })
+const canExpandDescription = computed(() => (currentTask.value?.description || '').length > 120)
 
 const heroImage = computed(() => currentTask.value?.images?.[0] ?? marker.value?.images?.[0] ?? null)
 const secondaryImage = computed(() => currentTask.value?.images?.[1] ?? marker.value?.images?.[1] ?? null)
@@ -128,11 +129,12 @@ const goNext = () => {
         </div>
       </div>
 
-      <p class="text-sm leading-6 text-text-00">
+      <p v-if="displayedDescription" class="text-sm leading-6 text-text-00">
         {{ displayedDescription }}
       </p>
 
       <button
+        v-if="canExpandDescription"
         type="button"
         class="inline-flex items-center gap-1 self-start text-sm font-medium text-primary hover:text-primary-hover"
         @click="toggleExpanded"

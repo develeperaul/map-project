@@ -212,67 +212,6 @@ export const mockMarkers: Marker[] = [
   },
 
   {
-    id: '6',
-    title: 'Эйфелева башня',
-    description: 'Символ Парижа',
-    coordinates: [2.2945, 48.8584],
-    category: 'travel',
-    date: '2024-07-01',
-    city: 'Париж',
-    images: [
-      { url: 'https://images.unsplash.com/photo-1511739001486-6bfe10ce65f4?w=400' }
-    ]
-  },
-  {
-    id: '7',
-    title: 'Колизей',
-    description: 'Древний амфитеатр в Риме',
-    coordinates: [12.4964, 41.8902],
-    category: 'travel',
-    date: '2024-07-15',
-    city: 'Рим',
-    images: [
-      { url: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=400' }
-    ]
-  },
-  {
-    id: '8',
-    title: 'Биг-Бен',
-    description: 'Знаменитая башня в Лондоне',
-    coordinates: [-0.1246, 51.5007],
-    category: 'travel',
-    date: '2024-08-20',
-    city: 'Лондон',
-    images: [
-      { url: 'https://images.unsplash.com/photo-1529655683826-aba9b3e77383?w=400' }
-    ]
-  },
-  {
-    id: '9',
-    title: 'Статуя Свободы',
-    description: 'Символ Нью-Йорка',
-    coordinates: [-74.0445, 40.6892],
-    category: 'travel',
-    date: '2024-09-10',
-    city: 'Нью-Йорк',
-    images: [
-      { url: 'https://images.unsplash.com/photo-1605130284535-11dd9eedc58a?w=400' }
-    ]
-  },
-  {
-    id: '10',
-    title: 'Тадж-Махал',
-    description: 'Жемчужина Индии',
-    coordinates: [78.0421, 27.1751],
-    category: 'travel',
-    date: '2024-10-05',
-    city: 'Агра',
-    images: [
-      { url: 'https://images.unsplash.com/photo-1564507592333-c60657eea523?w=400' }
-    ]
-  },
-
-  {
     id: '11',
     title: 'Чемпионат России',
     description: 'Футбольный матч',

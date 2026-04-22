@@ -2,7 +2,7 @@ import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { afterEach, describe, expect, it } from 'vitest'
 import Index from './Index.vue'
-import { mockMarkers } from '../../data/mock'
+import { mockMarkers, type Marker } from '../../data/mock'
 import { useMapStore } from '../../stores/map'
 
 const stubs = {
@@ -13,7 +13,16 @@ const stubs = {
 const project = mockMarkers.find(marker => marker.id === '1')!
 const secondTask = project.tasks![1]
 const thirdTask = project.tasks![2]
-const travelMarker = mockMarkers.find(marker => marker.category === 'travel')!
+const travelMarker: Marker = {
+  id: 'travel-test',
+  title: 'Тестовое путешествие',
+  description: '',
+  coordinates: [37.6173, 55.7558],
+  category: 'travel',
+  date: '2026-04-11',
+  city: 'Москва',
+  images: [],
+}
 
 const flowStubs = {
   BottomSheet: { template: '<div data-stub="sheet"><slot /></div>' },

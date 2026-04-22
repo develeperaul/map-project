@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { fetchEventElementById, fetchProjectMarkers, fetchTravelMarkers, type EventElementDetails } from '../api/events'
 import type { Category, Marker, Tag } from '../data/mock'
-import { getMarkersByCategory, mockMarkers } from '../data/mock'
+import { getMarkersByCategory } from '../data/mock'
 
 function calculateBounds(markers: Marker[]): { center: [number, number], zoom: number } | null {
   if (markers.length === 0) return null
@@ -63,9 +64,35 @@ export const useMapStore = defineStore('map', () => {
   const locations = ref<string[]>([])
   const sportTypes = ref<string[]>([])
   const availableTags = ref<Tag[]>([])
+  const projectMarkers = ref<Marker[] | null>(null)
+  const isProjectsLoading = ref(false)
+  const projectsError = ref<string | null>(null)
+  const travelMarkers = ref<Marker[] | null>(null)
+  const isTravelLoading = ref(false)
+  const travelError = ref<string | null>(null)
+  const eventElementDetails = ref<Record<string, EventElementDetails>>({})
+  const loadingElementDetails = ref<Record<string, boolean>>({})
+  const elementDetailsError = ref<string | null>(null)
 
-  const allMarkers = computed(() => mockMarkers)
-  const markers = computed(() => getMarkersByCategory(category.value as Category))
+  const resolvedProjectMarkers = computed(() => projectMarkers.value ?? getMarkersByCategory('projects'))
+  const resolvedTravelMarkers = computed(() => travelMarkers.value ?? [])
+  const selectedElementDetails = computed(() => {
+    if (!selectedMarker.value) return null
+    return eventElementDetails.value[selectedMarker.value.id] ?? null
+  })
+
+  const allMarkers = computed(() => [
+    ...resolvedProjectMarkers.value,
+    ...resolvedTravelMarkers.value,
+    ...getMarkersByCategory('sport'),
+  ])
+
+  const markers = computed(() => {
+    if (category.value === 'projects') return resolvedProjectMarkers.value
+    if (category.value === 'travel') return resolvedTravelMarkers.value
+    if (category.value === 'all') return allMarkers.value
+    return getMarkersByCategory(category.value as Category)
+  })
 
   const mapMarkers = computed(() => {
     if (category.value === 'projects') {
@@ -73,7 +100,7 @@ export const useMapStore = defineStore('map', () => {
     }
 
     if (category.value === 'all') {
-      return mockMarkers.flatMap(marker => {
+      return allMarkers.value.flatMap(marker => {
         if (marker.category === 'projects') {
           return marker.tasks || []
         }
@@ -87,8 +114,8 @@ export const useMapStore = defineStore('map', () => {
 
   const filteredMarkers = computed(() => {
     let result = category.value === 'all'
-      ? [...mockMarkers]
-      : getMarkersByCategory(category.value as Category)
+      ? [...allMarkers.value]
+      : [...markers.value]
 
     if (searchQuery.value) {
       const query = searchQuery.value.toLowerCase()
@@ -149,6 +176,14 @@ export const useMapStore = defineStore('map', () => {
     searchQuery.value = ''
     statusFilter.value = 'all'
     showFilterPanel.value = false
+
+    if (cat === 'projects') {
+      void loadProjectMarkers()
+    }
+
+    if (cat === 'travel') {
+      void loadTravelMarkers()
+    }
   }
 
   function setSearchQuery(query: string) {
@@ -164,6 +199,9 @@ export const useMapStore = defineStore('map', () => {
     if (marker.coordinates) {
       mapCenter.value = marker.coordinates
       mapZoom.value = 14
+    }
+    if (marker.category === 'travel') {
+      void loadEventElementDetails(marker.id)
     }
   }
 
@@ -203,7 +241,7 @@ export const useMapStore = defineStore('map', () => {
   }
 
   async function fetchFilterOptions() {
-    locations.value = ['Москва', 'Санкт-Петербург', 'Казань', 'Сочи', 'Екатеринбург']
+    locations.value = [...new Set(allMarkers.value.map(marker => marker.city).filter(Boolean))]
     sportTypes.value = ['Бег', 'Велосипед', 'Плавание', 'Теннис', 'Тренажёрный зал']
     availableTags.value = [
       { id: 1, title: 'IT' },
@@ -212,6 +250,70 @@ export const useMapStore = defineStore('map', () => {
       { id: 4, title: 'Митап' },
       { id: 5, title: 'Хакатон' }
     ]
+  }
+
+  async function loadTravelMarkers() {
+    if (travelMarkers.value !== null || isTravelLoading.value) return
+
+    isTravelLoading.value = true
+    travelError.value = null
+
+    try {
+      travelMarkers.value = await fetchTravelMarkers()
+    } catch (error) {
+      travelError.value = error instanceof Error ? error.message : 'Failed to load travel markers'
+      travelMarkers.value = null
+    } finally {
+      isTravelLoading.value = false
+    }
+  }
+
+  async function loadProjectMarkers() {
+    if (projectMarkers.value !== null || isProjectsLoading.value) return
+
+    isProjectsLoading.value = true
+    projectsError.value = null
+
+    try {
+      projectMarkers.value = await fetchProjectMarkers()
+    } catch (error) {
+      projectsError.value = error instanceof Error ? error.message : 'Failed to load project markers'
+      projectMarkers.value = null
+    } finally {
+      isProjectsLoading.value = false
+    }
+  }
+
+  async function loadEventElementDetails(id: string | number) {
+    const key = String(id)
+    if (eventElementDetails.value[key] || loadingElementDetails.value[key]) return
+
+    loadingElementDetails.value[key] = true
+    elementDetailsError.value = null
+
+    try {
+      const details = await fetchEventElementById(key)
+      eventElementDetails.value[key] = details
+
+      if (selectedMarker.value?.id === key && details.description) {
+        const updatedMarker = {
+          ...selectedMarker.value,
+          description: details.description,
+        }
+
+        selectedMarker.value = updatedMarker
+
+        if (travelMarkers.value) {
+          travelMarkers.value = travelMarkers.value.map(marker => (
+            marker.id === key ? { ...marker, description: details.description } : marker
+          ))
+        }
+      }
+    } catch (error) {
+      elementDetailsError.value = error instanceof Error ? error.message : 'Failed to load element details'
+    } finally {
+      loadingElementDetails.value[key] = false
+    }
   }
 
   return {
@@ -234,6 +336,16 @@ export const useMapStore = defineStore('map', () => {
     locations,
     sportTypes,
     availableTags,
+    projectMarkers,
+    isProjectsLoading,
+    projectsError,
+    travelMarkers,
+    isTravelLoading,
+    travelError,
+    eventElementDetails,
+    selectedElementDetails,
+    loadingElementDetails,
+    elementDetailsError,
     setCategory,
     setSearchQuery,
     setStatusFilter,
@@ -246,6 +358,9 @@ export const useMapStore = defineStore('map', () => {
     setTagFilter,
     resetFilters,
     applyFilters,
-    fetchFilterOptions
+    fetchFilterOptions,
+    loadProjectMarkers,
+    loadTravelMarkers,
+    loadEventElementDetails
   }
 })

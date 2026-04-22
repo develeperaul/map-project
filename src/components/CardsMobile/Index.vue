@@ -28,6 +28,7 @@ const descriptionReturnView = ref<SheetView | null>(null)
 const suppressSelectionWatch = ref(false)
 
 const selectedProjectTasks = computed(() => selectedProject.value?.tasks || [])
+const selectionSourceMarkers = computed(() => mapStore.allMarkers)
 const selectedDescriptionMarker = computed(() => {
   if (selectedProject.value) {
     return selectedProjectTasks.value[selectedTaskIndex.value] || mapStore.selectedMarker
@@ -115,7 +116,7 @@ const applyResolvedSelection = (
   syncMap = false,
   returnView: SheetView | null = sheetView.value,
 ) => {
-  const resolved = resolveSelection(marker)
+  const resolved = resolveSelection(marker, selectionSourceMarkers.value)
 
   if (resolved.kind === 'project') {
     showProjectTasks(resolved.project, resolved.taskIndex, syncMap)
