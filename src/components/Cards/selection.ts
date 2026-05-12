@@ -11,7 +11,7 @@ export function resolveSelection(marker: Marker, sourceMarkers: Marker[]): Selec
 
   if (project) {
     if (project.category === 'projects' && project.tasks?.length) {
-      return { kind: 'project', project, taskIndex: 0 }
+      return { kind: 'project', project, taskIndex: -1 }
     }
 
     return { kind: 'marker', marker: project }

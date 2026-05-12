@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch, type ComponentPublicInstance } from 'vue'
 
 import type { Marker } from '../../data/mock'
 import BaseIcon from '../BaseIcon.vue'
@@ -54,7 +54,7 @@ const handleTaskClick = (task: Marker, index: number) => {
   emit('selectTask', task, index)
 }
 
-const setTaskRef = (id: string, el: Element | null) => {
+const setTaskRef = (id: string, el: Element | ComponentPublicInstance | null) => {
   taskRefs.value[id] = el instanceof HTMLElement ? el : null
 }
 
@@ -83,7 +83,7 @@ defineExpose({
           class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-button bg-base-00 text-text-01 hover:text-text-00 transition-colors"
           @click="emit('back')"
         >
-          <BaseIcon name="arrow-left" class="w-5 h-5" />
+          <BaseIcon name="caret-left" class="w-5 h-5" />
         </button>
 
         <div class="min-w-0 flex-1 text-center pr-10">
@@ -122,8 +122,11 @@ defineExpose({
 
           <div class="min-w-0 flex-1">
             <h4 class="text-base font-medium text-text-00 truncate">{{ task.title }}</h4>
-            <p class="mt-1 text-sm text-text-01 truncate">{{ task.city }}</p>
-            <p class="mt-1 text-sm text-text-01">{{ task.description }}</p>
+            <p class="mt-1 text-sm  truncate">
+              <BaseIcon name="location" class="w-4 h-4 inline-block mr-1" />
+              {{ task.city }}
+            </p>
+            <p class="mt-1 line-clamp-2 text-sm text-text-01">{{ task.description }}</p>
             <p class="mt-1 text-sm text-text-01">{{ formatMonthYear(task.date) }}</p>
           </div>
         </div>

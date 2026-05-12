@@ -1,7 +1,10 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useMapStore } from '../stores/map'
 
 const mapStore = useMapStore()
+const selectedImage = computed(() => mapStore.selectedMarker?.images[0]?.url)
+const selectedCoordinates = computed(() => mapStore.selectedMarker?.coordinates)
 
 function closeCard() {
   mapStore.clearSelection()
@@ -16,8 +19,8 @@ function closeCard() {
     >
       <div class="relative">
         <img 
-          v-if="mapStore.selectedMarker.image"
-          :src="mapStore.selectedMarker.image" 
+          v-if="selectedImage"
+          :src="selectedImage" 
           :alt="mapStore.selectedMarker.title"
           class="w-full h-48 object-cover"
         />
@@ -39,12 +42,12 @@ function closeCard() {
           {{ mapStore.selectedMarker.description }}
         </p>
         
-        <div class="flex items-center gap-2 text-sm text-gray-500">
+        <div v-if="selectedCoordinates" class="flex items-center gap-2 text-sm text-gray-500">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
-          <span>{{ mapStore.selectedMarker.coordinates[0] }}, {{ mapStore.selectedMarker.coordinates[1] }}</span>
+          <span>{{ selectedCoordinates[0] }}, {{ selectedCoordinates[1] }}</span>
         </div>
       </div>
     </div>

@@ -113,7 +113,7 @@ export interface Marker {
 
 ### Подключение
 
-**Figma API Token:** `figd_SLFHhJyS5rLlZIFxYA8zesb8BY5D5eOJNw5qdvgH`
+**Figma API Token:** `YOUR_FIGMA_TOKEN`
 
 **File IDs:**
 - Основной: `hmbogrvJZng3RN8zgdAES4`
@@ -123,13 +123,13 @@ export interface Marker {
 
 #### Через curl (REST API)
 ```bash
-curl -s -H "X-Figma-Token: figd_SLFHhJyS5rLlZIFxYA8zesb8BY5D5eOJNw5qdvgH" \
+curl -s -H "X-Figma-Token: $FIGMA_TOKEN" \
   "https://api.figma.com/v1/files/{FILE_ID}/nodes?ids={NODE_ID}"
 ```
 
 Пример получения UI-Kit (node 348:50950):
 ```bash
-curl -s -H "X-Figma-Token: figd_SLFHhJyS5rLlZIFxYA8zesb8BY5D5eOJNw5qdvgH" \
+curl -s -H "X-Figma-Token: $FIGMA_TOKEN" \
   "https://api.figma.com/v1/files/piCpcnHZxTrn1Ove4z0JwM/nodes?ids=348:50950"
 ```
 

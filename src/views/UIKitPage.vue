@@ -9,7 +9,7 @@ import FilterPanel from '../components/FilterPanel.vue'
 import Checkbox from '../components/Checkbox.vue'
 import TestFilter from '../components/TestFilter.vue'
 import Calendar from '../components/Calendar.vue'
-import TestAllFilter from '../components/TestAllFilter.vue'
+import Filter from '../components/Filter.vue'
 import BottomSheet from '../components/BottomSheet.vue'
 
 const activeTab = ref('projects')
@@ -420,12 +420,12 @@ const buttonSizes = [
       </div>
     </section>
 
-    <!-- TestAllFilter Section -->
+    <!-- Filter Section -->
     <section class="mb-12">
-      <h2 class="text-xl font-semibold text-text-00 mb-4">TestAllFilter</h2>
+      <h2 class="text-xl font-semibold text-text-00 mb-4">Filter</h2>
 
       <div class="bg-[#ece6ef] p-4 rounded-card">
-        <TestAllFilter />
+        <Filter />
       </div>
     </section>
     

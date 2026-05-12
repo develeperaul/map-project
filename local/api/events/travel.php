@@ -195,6 +195,11 @@ function normalizeTags($property): array
     return $tags;
 }
 
+function normalizeDistanceValue($value): string
+{
+    return trim((string) $value);
+}
+
 function normalizeImages($property): array
 {
     $values = is_array($property) && isListArray($property) ? $property : [$property];
@@ -221,6 +226,7 @@ function mapElementToTravelMarker(array $element): array
     $properties = collectElementProperties((int) $element['ID']);
     $coordinates = normalizeCoordinates($properties['PROP1']['VALUE'] ?? null);
     $tags = normalizeTags($properties['PROP5'] ?? []);
+    $distance = normalizeDistanceValue($properties['PROP9']['VALUE'] ?? '');
 
     $marker = [
         'id' => (string) $element['ID'],
@@ -238,6 +244,10 @@ function mapElementToTravelMarker(array $element): array
 
     if ($tags !== []) {
         $marker['tags'] = $tags;
+    }
+
+    if ($distance !== '') {
+        $marker['distance'] = $distance;
     }
 
     return $marker;

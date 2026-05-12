@@ -70,7 +70,7 @@ watch(activeTaskId, async (id) => {
           aria-label="Назад к проектам"
           @click="emit('back')"
         >
-          <BaseIcon name="arrow-left" class="h-4 w-4" size="16px" />
+          <BaseIcon name="caret-left" class="h-4 w-4" size="16px" />
         </button>
 
         <div class="min-w-0 flex-1 text-center">
@@ -107,7 +107,9 @@ watch(activeTaskId, async (id) => {
             v-if="isCompleted(task.status)"
             class="flex h-4 w-4 items-center justify-center rounded-full bg-secondary-dark text-white"
           >
-            <BaseIcon name="check" class="h-2.5 w-2.5" size="10px" />
+            <svg class="h-2 w-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+            </svg>
           </span>
           <span v-else class="mt-px h-3.5 w-3.5 rounded-full border-2 border-primary bg-white"></span>
         </span>

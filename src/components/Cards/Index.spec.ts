@@ -3,18 +3,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { describe, expect, it } from 'vitest'
 import Index from './Index.vue'
 import { useMapStore } from '../../stores/map'
-import { mockMarkers, type Marker } from '../../data/mock'
-
-const travelMarker: Marker = {
-  id: 'travel-test',
-  title: 'Тестовое путешествие',
-  description: '',
-  coordinates: [37.6173, 55.7558],
-  category: 'travel',
-  date: '2026-04-11',
-  city: 'Москва',
-  images: [],
-}
+import { projectFixture, travelFixture } from '../../test/markers'
 
 const stubs = {
   Main: { template: '<div data-stub="main" />' },
@@ -30,8 +19,9 @@ describe('Cards/Index', () => {
     setActivePinia(pinia)
 
     const store = useMapStore()
+    store.projectMarkers = [projectFixture]
     store.setCategory('projects')
-    store.selectMarker(mockMarkers[0].tasks![3])
+    store.selectMarker(projectFixture.tasks![3])
 
     const wrapper = mount(Index, {
       global: {
@@ -51,7 +41,7 @@ describe('Cards/Index', () => {
 
     const store = useMapStore()
     store.setCategory('travel')
-    store.selectMarker(travelMarker)
+    store.selectMarker(travelFixture)
 
     const wrapper = mount(Index, {
       global: {
@@ -70,7 +60,7 @@ describe('Cards/Index', () => {
     setActivePinia(pinia)
 
     const store = useMapStore()
-    store.selectMarker(travelMarker)
+    store.selectMarker(travelFixture)
 
     const wrapper = mount(Index, {
       global: {
@@ -82,6 +72,25 @@ describe('Cards/Index', () => {
     expect(wrapper.find('[data-stub="main"]').exists()).toBe(true)
     expect(wrapper.find('[data-stub="list"]').exists()).toBe(true)
     expect(wrapper.find('[data-stub="description"]').exists()).toBe(true)
+  })
+
+  it('opens list when searching without a selected category', async () => {
+    const pinia = createPinia()
+    setActivePinia(pinia)
+
+    const store = useMapStore()
+    store.setSearchQuery('казань')
+
+    const wrapper = mount(Index, {
+      global: {
+        plugins: [pinia],
+        stubs,
+      }
+    })
+
+    expect(wrapper.find('[data-stub="main"]').exists()).toBe(true)
+    expect(wrapper.find('[data-stub="list"]').exists()).toBe(true)
+    expect(wrapper.find('[data-stub="description"]').exists()).toBe(false)
   })
 
   it('shows the list when a tab category is selected', async () => {

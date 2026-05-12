@@ -3,6 +3,7 @@ import { ref, watch } from 'vue'
 import { useMapStore } from '../../stores/map'
 import type { Marker } from '../../data/mock'
 import EmptyState from '../EmptyState.vue'
+import ImageWithLoader from '../ImageWithLoader.vue'
 
 const props = withDefaults(defineProps<{
   query: string
@@ -116,7 +117,13 @@ const handleClear = () => {
               </svg>
             </div>
             
-            <img v-if="marker.images?.[0]?.url" :src="marker.images[0].url" :alt="marker.title" class="w-10 h-10 rounded object-cover flex-shrink-0">
+            <ImageWithLoader
+              v-if="marker.images?.[0]?.url"
+              :src="marker.images[0].url"
+              :alt="marker.title"
+              wrapper-class="h-10 w-10 flex-shrink-0 rounded"
+              img-class="h-full w-full rounded object-cover"
+            />
             <div class="flex-1 min-w-0">
               <h3 class="text-sm font-medium text-text-00 truncate">{{ marker.title }}</h3>
               <p class="text-xs text-text-01 truncate">{{ marker.description }}</p>

@@ -172,6 +172,8 @@ if (!$element) {
 $detailText = (string) ($element['DETAIL_TEXT'] ?? '');
 $previewText = (string) ($element['PREVIEW_TEXT'] ?? '');
 $description = normalizeText($detailText) ?: normalizeText($previewText);
+$properties = collectElementProperties($elementId);
+$distance = trim((string) ($properties['PROP9']['value'] ?? ''));
 
 respondJson([
     'id' => (string) $element['ID'],
@@ -187,5 +189,6 @@ respondJson([
     'detailText' => $detailText,
     'detailTextType' => (string) ($element['DETAIL_TEXT_TYPE'] ?? ''),
     'description' => $description,
-    'properties' => collectElementProperties($elementId),
+    'distance' => $distance,
+    'properties' => $properties,
 ]);

@@ -1,135 +1,185 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import BaseIcon from './BaseIcon.vue'
 
+type MarkerCategory = 'projects' | 'travel' | 'sport'
+type MarkerState = 'default' | 'hover' | 'click'
+
 interface Props {
-  category: 'projects' | 'travel' | 'sport'
-  state?: 'default' | 'hover' | 'click'
+  category: MarkerCategory
+  state?: MarkerState
   active?: boolean
-  size?: number
 }
 
 const props = withDefaults(defineProps<Props>(), {
   state: 'default',
   active: false,
-  size: 44,
 })
 
-// Внешний вид зависит от типа точки на карте.
 const categoryConfig = {
   projects: {
-    bg: 'bg-primary',
-    innerBg: 'bg-primary',
+    default: '#3F51B5',
+    hover: '#6F7DC8',
     icon: 'project',
-    bottomColor: '#4527A0',
-    type: 'pin',
   },
   travel: {
-    bg: 'bg-orange',
-    innerBg: 'bg-orange',
+    default: '#FF5722',
+    hover: '#FF8159',
     icon: 'travel',
-    bottomColor: '#FF9800',
-    type: 'circle',
   },
   sport: {
-    bg: 'bg-purple',
-    innerBg: 'bg-purple',
+    default: '#9C27B0',
+    hover: '#B55DC4',
     icon: 'sport',
-    bottomColor: '#9C27B0',
-    type: 'pin',
   },
 }
 
-const stateClasses = {
-  default: '',
-  hover: 'scale-110',
-  click: 'scale-95',
-}
+const isHovered = ref(false)
 
-const isCircle = computed(() => categoryConfig[props.category].type === 'circle')
-const isPin = computed(() => categoryConfig[props.category].type === 'pin')
+const visualState = computed<MarkerState>(() => {
+  if (props.active || props.state === 'click') return 'click'
+  if (isHovered.value || props.state === 'hover') return 'hover'
+  return 'default'
+})
+
 const config = computed(() => categoryConfig[props.category])
+const categoryColor = computed(() => config.value.default)
+const fillColor = computed(() => visualState.value === 'hover' ? config.value.hover : config.value.default)
+const outerColor = computed(() => visualState.value === 'click' ? categoryColor.value : '#FFFFFF')
+const innerColor = computed(() => visualState.value === 'click' ? '#FFFFFF' : fillColor.value)
+const iconColor = computed(() => visualState.value === 'click' ? categoryColor.value : '#FFFFFF')
+
+const markerStyle = computed(() => ({
+  '--marker-category-color': categoryColor.value,
+  '--marker-outer-color': outerColor.value,
+  '--marker-inner-color': innerColor.value,
+  '--marker-icon-color': iconColor.value,
+}))
 </script>
 
 <template>
-  <div v-if="isCircle" class="relative flex items-center justify-center marker-wrapper" :class="{ active: props.active }">
-    <div 
-      class="w-10 h-10 rounded-full border-2 border-white shadow-lg transition-transform flex items-center justify-center"
-      :class="[
-        props.state === 'click' ? 'scale-90' : '',
-        props.state === 'hover' ? 'scale-110' : ''
-      ]"
-      :style="{ backgroundColor: config.bottomColor }"
-    >
-      <BaseIcon :name="config.icon" class="w-5 h-5 text-white" />
+  <div
+    class="marker-wrapper marker-pin"
+    :class="[`marker-pin--${visualState}`, { active: props.active }]"
+    :style="markerStyle"
+    @mouseenter="isHovered = true"
+    @mouseleave="isHovered = false"
+  >
+    <div class="marker-pin__shape" aria-hidden="true">
+      <span class="marker-pin__tail marker-pin__tail--outer"></span>
+      <span class="marker-pin__circle marker-pin__circle--outer"></span>
+      <span class="marker-pin__tail marker-pin__tail--inner"></span>
+
+      <span class="marker-pin__circle marker-pin__circle--inner">
+        <BaseIcon
+          :name="config.icon"
+          class="marker-pin__icon"
+          size="16px"
+        />
+      </span>
     </div>
+
+    <span
+      class="marker-pin__dot"
+      aria-hidden="true"
+    ></span>
   </div>
-
-  <svg v-else-if="isPin" class="marker-wrapper" :class="{ active: props.active }" width="50" height="67" viewBox="0 0 50 67" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <g filter="url(#filter0_dd_348_42128)">
-        <rect x="3" width="44" height="44" rx="22" fill="white" shape-rendering="crispEdges"/>
-        <foreignObject x="5" y="2" width="40" height="40">
-          <div
-          class=" relative rounded-full border-2 border-white flex items-center justify-center transition-transform cursor-pointer relative"
-          :class="[
-            stateClasses[state],
-            `w-${props.size / 4} h-${props.size / 4}`
-          ]"
-        >
-          
-          <div
-            class="rounded-full flex items-center justify-center"
-            :class="[
-              categoryConfig[category].bg,
-              
-            ]"
-          >
-            
-            <div
-              class="rounded-full flex items-center justify-center w-10 h-10"
-              :class="[
-                categoryConfig[category].innerBg
-                
-              ]"
-            >
-              <BaseIcon
-                :name="categoryConfig[category].icon"
-                class="text-white"
-                :size="`${props.size * 0.4}px`"
-              />
-            </div>
-          </div>
-
-          
-          <div
-            v-if="state === 'hover'"
-            class="absolute inset-0 rounded-full border-2 border-primary-20 animate-pulse"
-          ></div>
-        </div>
-        </foreignObject>
-        <path d="M12.3525 40L18.5226 41.4636C22.7814 42.4738 27.2177 42.4715 31.4755 41.457L37.5898 40L26.3766 50.6877C25.6053 51.4228 24.3931 51.4242 23.6201 50.6908L12.3525 40Z" fill="white"/>
-        
-        <circle cx="25" cy="57" :r="3" :fill="categoryConfig[category].bottomColor"/>
-      </g>
-      <defs>
-      <filter id="filter0_dd_348_42128" x="0" y="0" width="50" height="67" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
-      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
-      <feMorphology radius="1" operator="erode" in="SourceAlpha" result="effect1_dropShadow_348_42128"/>
-      <feOffset dy="4"/>
-      <feGaussianBlur stdDeviation="2"/>
-      <feComposite in2="hardAlpha" operator="out"/>
-      <feColorMatrix type="matrix" values="0 0 0 0 0.0470588 0 0 0 0 0.0470588 0 0 0 0 0.0509804 0 0 0 0.05 0"/>
-      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_348_42128"/>
-      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
-      <feMorphology radius="1" operator="erode" in="SourceAlpha" result="effect2_dropShadow_348_42128"/>
-      <feOffset dy="4"/>
-      <feGaussianBlur stdDeviation="2"/>
-      <feComposite in2="hardAlpha" operator="out"/>
-      <feColorMatrix type="matrix" values="0 0 0 0 0.0470588 0 0 0 0 0.0470588 0 0 0 0 0.0509804 0 0 0 0.1 0"/>
-      <feBlend mode="normal" in2="effect1_dropShadow_348_42128" result="effect2_dropShadow_348_42128"/>
-      <feBlend mode="normal" in="SourceGraphic" in2="effect2_dropShadow_348_42128" result="shape"/>
-      </filter>
-      </defs>
-    </svg>
 </template>
+
+<style scoped>
+.marker-pin {
+  position: relative;
+  width: 50px;
+  height: 67px;
+  cursor: pointer;
+  color: var(--marker-icon-color);
+  transform-origin: 25px 57px;
+  transition: transform 160ms ease;
+}
+
+.marker-pin--hover {
+  transform: translateY(-1px);
+}
+
+.marker-pin--click {
+  transform: translateY(1px);
+}
+
+.marker-pin__shape {
+  position: absolute;
+  top: 0;
+  left: 3px;
+  width: 44px;
+  height: 52px;
+  filter:
+    drop-shadow(0 4px 4px rgba(12, 12, 13, 0.1))
+    drop-shadow(0 4px 4px rgba(12, 12, 13, 0.05));
+}
+
+.marker-pin__circle {
+  position: absolute;
+  border-radius: 999px;
+}
+
+.marker-pin__circle--outer {
+  inset: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  background: var(--marker-outer-color);
+}
+
+.marker-pin__circle--inner {
+  top: 2px;
+  left: 2px;
+  z-index: 3;
+  display: flex;
+  width: 40px;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
+  background: var(--marker-inner-color);
+  color: var(--marker-icon-color);
+}
+
+.marker-pin__tail {
+  position: absolute;
+  border-radius: 2px;
+  transform: rotate(45deg);
+}
+
+.marker-pin__tail--outer {
+  top: 31px;
+  left: 13px;
+  z-index: 1;
+  width: 18px;
+  height: 18px;
+  background: var(--marker-outer-color);
+}
+
+.marker-pin__tail--inner {
+  top: 30px;
+  left: 15px;
+  z-index: 2;
+  width: 14px;
+  height: 14px;
+  background: var(--marker-inner-color);
+}
+
+.marker-pin__dot {
+  position: absolute;
+  top: 54px;
+  left: 22px;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--marker-category-color);
+  box-shadow:
+    0 4px 4px rgba(12, 12, 13, 0.1),
+    0 4px 4px rgba(12, 12, 13, 0.05);
+}
+
+.marker-pin__icon {
+  display: block;
+  color: currentColor;
+}
+</style>

@@ -1,46 +1,36 @@
 import { describe, expect, it } from 'vitest'
-import { mockMarkers, type Marker } from '../../data/mock'
+import type { Marker } from '../../data/mock'
+import { markerFixtures, travelFixture } from '../../test/markers'
 import { resolveSelection } from './selection'
 
-const travelMarker: Marker = {
-  id: 'travel-test',
-  title: 'Тестовое путешествие',
-  description: '',
-  coordinates: [37.6173, 55.7558],
-  category: 'travel',
-  date: '2026-04-11',
-  city: 'Москва',
-  images: [],
-}
-
 describe('resolveSelection', () => {
-  it('resolves a project marker to the first task', () => {
-    const result = resolveSelection(mockMarkers[0], mockMarkers)
+  it('resolves a project marker without selecting a task by default', () => {
+    const result = resolveSelection(markerFixtures[0], markerFixtures)
 
     expect(result.kind).toBe('project')
     if (result.kind === 'project') {
-      expect(result.project.id).toBe(mockMarkers[0].id)
-      expect(result.taskIndex).toBe(0)
+      expect(result.project.id).toBe(markerFixtures[0].id)
+      expect(result.taskIndex).toBe(-1)
     }
   })
 
   it('resolves a task marker to its project and index', () => {
-    const result = resolveSelection(mockMarkers[0].tasks![3], mockMarkers)
+    const result = resolveSelection(markerFixtures[0].tasks![3], markerFixtures)
 
     expect(result.kind).toBe('task')
     if (result.kind === 'task') {
-      expect(result.project.id).toBe(mockMarkers[0].id)
+      expect(result.project.id).toBe(markerFixtures[0].id)
       expect(result.taskIndex).toBe(3)
-      expect(result.task.id).toBe(mockMarkers[0].tasks![3].id)
+      expect(result.task.id).toBe(markerFixtures[0].tasks![3].id)
     }
   })
 
   it('resolves a travel marker as a plain marker', () => {
-    const result = resolveSelection(travelMarker, mockMarkers)
+    const result = resolveSelection(travelFixture, markerFixtures)
 
     expect(result.kind).toBe('marker')
     if (result.kind === 'marker') {
-      expect(result.marker.id).toBe(travelMarker.id)
+      expect(result.marker.id).toBe(travelFixture.id)
     }
   })
 

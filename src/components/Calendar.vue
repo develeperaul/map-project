@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import BaseIcon from './BaseIcon.vue'
 
 interface Props {
@@ -49,11 +49,24 @@ const monthNames = [
   'Декабрь',
 ]
 
-const currentDate = ref(new Date(2026, 1, 1))
+const initialDate = props.modelValue?.start ?? new Date()
+
+const currentDate = ref(new Date(initialDate.getFullYear(), initialDate.getMonth(), 1))
 const hoverDate = ref<Date | null>(null)
 const tempRange = ref<RangeValue>({
-  start: props.modelValue?.start ?? new Date(2026, 1, 25),
-  end: props.modelValue?.end ?? new Date(2026, 2, 3),
+  start: props.modelValue?.start ?? null,
+  end: props.modelValue?.end ?? null,
+})
+
+watch(() => props.modelValue, (value) => {
+  tempRange.value = {
+    start: value?.start ?? null,
+    end: value?.end ?? null,
+  }
+  hoverDate.value = null
+
+  const nextDate = value?.start ?? new Date()
+  currentDate.value = new Date(nextDate.getFullYear(), nextDate.getMonth(), 1)
 })
 
 const currentYear = computed(() => currentDate.value.getFullYear())
@@ -84,7 +97,7 @@ const displayRangeText = computed(() => {
     return `${formatDate(start)} - ...`
   }
 
-  return '01.01.2024 - 01.01.2025'
+  return 'Не выбран'
 })
 
 const activeRange = computed<RangeValue>(() => {
@@ -261,7 +274,7 @@ const handleReset = () => {
           aria-label="Предыдущий месяц"
           @click="prevMonth"
         >
-          <BaseIcon name="arrow-left" class="h-5 w-5" />
+          <BaseIcon name="caret-left" class="h-5 w-5" />
         </button>
         <button
           type="button"
@@ -270,7 +283,7 @@ const handleReset = () => {
           aria-label="Следующий месяц"
           @click="nextMonth"
         >
-          <BaseIcon name="arrow-left" class="h-5 w-5 rotate-180" />
+          <BaseIcon name="caret-right" class="h-5 w-5" />
         </button>
       </div>
     </div>

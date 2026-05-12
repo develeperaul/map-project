@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { useMapStore } from '@/stores/map'
-import BottomSheet from '../BottomSheet.vue'
-import BaseIcon from '../BaseIcon.vue'
+import { useMapStore } from '../stores/map'
+import BottomSheet from './BottomSheet.vue'
+import BaseIcon from './BaseIcon.vue'
 import Chip from './Chip.vue'
-import type { Marker } from '@/data/mock'
+import type { Marker } from '../data/mock'
 
 const mapStore = useMapStore()
 
@@ -19,7 +19,7 @@ watch(() => mapStore.selectedMarker, (marker) => {
 
 const handleClose = () => {
   selectedMarker.value = null
-  mapStore.selectMarker(null)
+  mapStore.clearSelection()
 }
 </script>
 
@@ -39,9 +39,8 @@ const handleClose = () => {
         <div v-if="selectedMarker.tags" class="flex flex-wrap gap-2 mb-4">
           <Chip 
             v-for="tag in selectedMarker.tags" 
-            :key="tag" 
-            :label="tag"
-            :active="true"
+            :key="tag.id" 
+            :label="tag.title"
           />
         </div>
         

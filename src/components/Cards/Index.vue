@@ -2,7 +2,7 @@
 import { ref, computed, watch } from 'vue'
 import { useMapStore } from '../../stores/map'
 import Main from './Main.vue'
-import Filter from './Filter.vue'
+import Filter from '../Filter.vue'
 import List from './List.vue'
 import Description from './Description.vue'
 import TaskList from './TaskList.vue'
@@ -13,6 +13,7 @@ const mapStore = useMapStore()
 
 const showContent = computed(() => (
   mapStore.category !== 'all'
+  || mapStore.searchQuery.trim() !== ''
   || mapStore.selectedMarker !== null
   || selectedProject.value !== null
   || mapStore.showFilterPanel
@@ -20,7 +21,7 @@ const showContent = computed(() => (
 const showDescription = computed(() => mapStore.selectedMarker !== null && !mapStore.showFilterPanel)
 
 const selectedProject = ref<Marker | null>(null)
-const selectedTaskIndex = ref(0)
+const selectedTaskIndex = ref(-1)
 const showTaskList = computed(() => selectedProject.value !== null)
 
 const selectedProjectTasks = computed(() => selectedProject.value?.tasks || [])
@@ -28,8 +29,11 @@ const selectionSourceMarkers = computed(() => mapStore.allMarkers)
 
 // Держим карту и список задач в одном активном состоянии.
 watch([selectedProject, selectedTaskIndex], () => {
+  if (selectedTaskIndex.value < 0) return
+
   const task = selectedProjectTasks.value[selectedTaskIndex.value]
   if (task) {
+    mapStore.focusProjectTasks(selectedProject.value!, task)
     mapStore.selectMarker(task)
   }
 }, { immediate: true })
@@ -40,29 +44,29 @@ const applyResolvedSelection = (marker: Marker) => {
 
   if (resolved.kind === 'project') {
     selectedProject.value = resolved.project
-    selectedTaskIndex.value = resolved.taskIndex
+    selectedTaskIndex.value = -1
 
-    const task = resolved.project.tasks?.[resolved.taskIndex]
-    if (task && mapStore.selectedMarker?.id !== task.id) {
-      mapStore.selectMarker(task)
-    }
+    mapStore.selectedMarker = null
+    mapStore.focusProjectTasks(resolved.project, null)
     return
   }
 
   if (resolved.kind === 'task') {
     selectedProject.value = resolved.project
     selectedTaskIndex.value = resolved.taskIndex
+    mapStore.focusProjectTasks(resolved.project, resolved.task)
     return
   }
 
   selectedProject.value = null
-  selectedTaskIndex.value = 0
+  selectedTaskIndex.value = -1
+  mapStore.clearProjectFocus()
 }
 
 // При смене категории сбрасываем вложенный выбор и фильтр-панель.
 watch(() => mapStore.category, () => {
   selectedProject.value = null
-  selectedTaskIndex.value = 0
+  selectedTaskIndex.value = -1
   mapStore.showFilterPanel = false
   mapStore.clearSelection()
 })
@@ -76,22 +80,24 @@ watch(() => mapStore.selectedMarker, (marker) => {
 
 const handleProjectSelect = (project: Marker) => {
   selectedProject.value = project
-  selectedTaskIndex.value = 0
+  selectedTaskIndex.value = -1
 
-  const firstTask = project.tasks?.[0]
-  if (firstTask) {
-    mapStore.selectMarker(firstTask)
-  }
+  mapStore.selectedMarker = null
+  mapStore.focusProjectTasks(project, null)
 }
 
 const handleBack = () => {
   selectedProject.value = null
-  selectedTaskIndex.value = 0
+  selectedTaskIndex.value = -1
   mapStore.clearSelection()
+  mapStore.clearProjectFocus()
 }
 
 const handleTaskSelect = (task: Marker, index: number) => {
   selectedTaskIndex.value = index
+  if (selectedProject.value) {
+    mapStore.focusProjectTasks(selectedProject.value, task)
+  }
   mapStore.selectMarker(task)
 }
 

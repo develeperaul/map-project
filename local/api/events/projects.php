@@ -78,6 +78,11 @@ function normalizeDateValue($value): string
     return $timestamp ? date('Y-m-d', $timestamp) : '';
 }
 
+function normalizeDistanceValue($value): string
+{
+    return trim((string) $value);
+}
+
 function getTextValue(array $element): string
 {
     $preview = trim((string) ($element['PREVIEW_TEXT'] ?? ''));
@@ -253,6 +258,7 @@ function mapElementToProjectTask(array $element): array
     $properties = collectElementProperties((int) $element['ID']);
     $coordinates = normalizeCoordinates($properties['PROP1']['VALUE'] ?? null);
     $tags = normalizeTags($properties['PROP5'] ?? []);
+    $distance = normalizeDistanceValue($properties['PROP9']['VALUE'] ?? '');
 
     $marker = [
         'id' => (string) $element['ID'],
@@ -261,6 +267,7 @@ function mapElementToProjectTask(array $element): array
         'category' => 'projects',
         'date' => normalizeDateValue($properties['PROP3']['VALUE'] ?? $element['ACTIVE_FROM'] ?? null),
         'city' => (string) ($properties['PROP2']['VALUE'] ?? ''),
+        'distance' => $distance,
         'status' => normalizeProjectStatus($properties['PROP7'] ?? null),
         'images' => normalizeImages($properties['PROP6'] ?? []),
     ];
@@ -346,6 +353,7 @@ function mapSectionToProjectMarker(array $section): array
     $sectionImages = normalizeSectionImages($section);
     $taskImages = firstNonEmptyValue($tasks, 'images') ?? [];
     $tags = firstNonEmptyValue($tasks, 'tags') ?? [];
+    $distance = firstNonEmptyValue($tasks, 'distance') ?? '';
     $date = normalizeDateValue($section['UF_START'] ?? null) ?: getEarliestTaskDate($tasks);
 
     $marker = [
@@ -355,6 +363,7 @@ function mapSectionToProjectMarker(array $section): array
         'category' => 'projects',
         'date' => $date,
         'city' => (string) (firstNonEmptyValue($tasks, 'city') ?? ''),
+        'distance' => is_string($distance) ? $distance : '',
         'status' => getProjectStatus($tasks),
         'images' => $sectionImages !== [] ? $sectionImages : $taskImages,
         'tasks' => $tasks,

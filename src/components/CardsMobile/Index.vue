@@ -9,7 +9,7 @@ import List from './List.vue'
 import TaskList from './TaskList.vue'
 import Description from './Description.vue'
 import BottomSheet from '../BottomSheet.vue'
-import TestAllFilter from '../TestAllFilter.vue'
+import Filter from '../Filter.vue'
 
 const mapStore = useMapStore()
 
@@ -22,7 +22,7 @@ const showFilter = ref(false)
 const showSearch = ref(false)
 const listSheetHeight = ref(0)
 const selectedProject = ref<Marker | null>(null)
-const selectedTaskIndex = ref(0)
+const selectedTaskIndex = ref(-1)
 const viewBeforeFilter = ref<SheetView | null>(null)
 const descriptionReturnView = ref<SheetView | null>(null)
 const suppressSelectionWatch = ref(false)
@@ -51,7 +51,8 @@ const bottomControlsStyle = computed(() => ({
 
 const resetNestedSelection = () => {
   selectedProject.value = null
-  selectedTaskIndex.value = 0
+  selectedTaskIndex.value = -1
+  mapStore.clearProjectFocus()
 }
 
 const selectMarkerSilently = (marker: Marker) => {
@@ -59,7 +60,7 @@ const selectMarkerSilently = (marker: Marker) => {
   mapStore.selectMarker(marker)
 }
 
-const showProjectTasks = (project: Marker, taskIndex = 0, syncMap = true) => {
+const showProjectTasks = (project: Marker, taskIndex = -1, syncMap = true) => {
   selectedProject.value = project
   selectedTaskIndex.value = taskIndex
   sheetView.value = 'tasks'
@@ -68,7 +69,11 @@ const showProjectTasks = (project: Marker, taskIndex = 0, syncMap = true) => {
   showFilter.value = false
   showSearch.value = false
 
-  const task = project.tasks?.[taskIndex]
+  const task = taskIndex >= 0 ? project.tasks?.[taskIndex] : null
+  mapStore.focusProjectTasks(project, task)
+  if (!task) {
+    mapStore.selectedMarker = null
+  }
   if (syncMap && task) {
     selectMarkerSilently(task)
   }
@@ -89,6 +94,7 @@ const showTaskDescription = (
   showSearch.value = false
 
   const task = project.tasks?.[taskIndex]
+  mapStore.focusProjectTasks(project, task)
   if (syncMap && task) {
     selectMarkerSilently(task)
   }
@@ -250,6 +256,9 @@ const handleDescriptionTaskIndex = (index: number) => {
 
   const task = selectedProjectTasks.value[index]
   if (task) {
+    if (selectedProject.value) {
+      mapStore.focusProjectTasks(selectedProject.value, task)
+    }
     selectMarkerSilently(task)
   }
 }
@@ -316,7 +325,7 @@ const handleSelectFromSearch = (marker: Marker) => {
     max-height="calc(100vh - 136px)"
     @height-change="handleSheetHeight"
   >
-    <TestAllFilter embedded @close="closeFilter" />
+    <Filter embedded @close="closeFilter" />
   </BottomSheet>
 
   <Search

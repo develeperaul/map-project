@@ -1,11 +1,11 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import TaskList from './TaskList.vue'
-import { mockMarkers } from '../../data/mock'
+import { projectFixture } from '../../test/markers'
 
 describe('Cards/TaskList', () => {
   it('renders desktop header and highlights the active task', () => {
-    const project = mockMarkers[0]
+    const project = projectFixture
 
     const wrapper = mount(TaskList, {
       props: {

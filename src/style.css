@@ -39,6 +39,23 @@
   --color-red-10: rgba(244, 67, 54, 0.1);
   --color-blue: #2196F3;
   --color-blue-10: rgba(33, 150, 243, 0.1);
+
+  --text-body-xl: 20px;
+  --text-body-xl--line-height: 28px;
+  --text-body-l: 18px;
+  --text-body-l--line-height: 26px;
+  --text-body-m: 16px;
+  --text-body-m--line-height: 24px;
+  --text-body-m-reg: 16px;
+  --text-body-m-reg--line-height: 24px;
+  --text-body-s: 14px;
+  --text-body-s--line-height: 20px;
+  --text-body-s-reg: 14px;
+  --text-body-s-reg--line-height: 20px;
+  --text-body-xs: 12px;
+  --text-body-xs--line-height: 16px;
+  --text-body-xs-reg: 12px;
+  --text-body-xs-reg--line-height: 16px;
   
   --radius-button: 8px;
   --radius-card: 16px;
@@ -49,6 +66,22 @@ html, body, #app {
   width: 100%;
   height: 100%;
   /* overflow: hidden; */
+}
+
+.scrollbar-hidden {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .marker-wrapper {

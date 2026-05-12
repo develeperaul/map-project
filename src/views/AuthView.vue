@@ -1,240 +1,137 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import BaseInput from '@/components/ui/BaseInput.vue'
-import BaseButton from '@/components/ui/BaseButton.vue'
+import { ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+
+import Button from '../components/Button.vue'
+import { resolveAuthRedirect, useAuthStore } from '../stores/auth'
 
 const router = useRouter()
+const route = useRoute()
+const authStore = useAuthStore()
 
-const email = ref('')
+const login = ref('')
 const password = ref('')
-const isLoading = ref(false)
-const errors = ref<{ email?: string; password?: string }>({})
+const errorMessage = ref('')
 
-const isValid = computed(() => {
-  return email.value.includes('@') && password.value.length >= 6
-})
+const handleSubmit = () => {
+  if (!login.value.trim() || !password.value.trim()) return
 
-const handleSubmit = async () => {
-  errors.value = {}
-  
-  if (!email.value.includes('@')) {
-    errors.value.email = 'Введите корректный email'
+  errorMessage.value = ''
+
+  const isValid = authStore.login(login.value, password.value)
+
+  if (!isValid) {
+    errorMessage.value = 'Неверный логин или пароль'
+    return
   }
-  if (password.value.length < 6) {
-    errors.value.password = 'Пароль должен быть не менее 6 символов'
-  }
-  
-  if (Object.keys(errors.value).length > 0) return
-  
-  isLoading.value = true
-  
-  setTimeout(() => {
-    isLoading.value = false
-    router.push('/travels')
-  }, 1000)
+
+  void router.replace(resolveAuthRedirect(route.query.redirect) ?? {
+    name: 'map',
+    query: { category: 'projects' },
+  })
 }
 </script>
 
 <template>
-  <div class="auth-page">
-    <div class="auth-page__status-bar">
-      <div class="auth-page__status-bar-inner">
-        <div class="auth-page__time">9:41</div>
-        <div class="auth-page__icons">
-          <span class="auth-page__signal"></span>
-          <span class="auth-page__wifi"></span>
-          <span class="auth-page__battery"></span>
-        </div>
+  <div class="auth-page relative min-h-[100dvh] overflow-hidden bg-white text-[#1a1a1a] md:bg-[#f3f4f6]">
+    <section class="hidden min-h-[100dvh] items-center justify-center px-4 md:flex">
+      <div class="w-full max-w-[508px] rounded-[16px] bg-white p-6">
+        <h1 class="text-[20px] font-medium leading-6 text-[#1a1a1a]">
+          Вход
+        </h1>
+
+        <form class="mt-4 space-y-2" @submit.prevent="handleSubmit">
+          <input
+            v-model.trim="login"
+            type="text"
+            autocomplete="username"
+            aria-label="Логин"
+            placeholder="Логин"
+            class="h-12 w-full rounded-button border border-transparent bg-[#f3f4f6] px-4 text-sm font-medium leading-5 text-[#1a1a1a] outline-none transition-shadow transition-colors placeholder:text-[#6b6375] focus:border-transparent focus:ring-2 focus:ring-[#3f51b5]/15"
+          >
+
+          <input
+            v-model.trim="password"
+            type="password"
+            autocomplete="current-password"
+            aria-label="Пароль"
+            placeholder="Пароль"
+            class="h-12 w-full rounded-button border border-transparent bg-[#f3f4f6] px-4 text-sm font-medium leading-5 text-[#1a1a1a] outline-none transition-shadow transition-colors placeholder:text-[#6b6375] focus:border-transparent focus:ring-2 focus:ring-[#3f51b5]/15"
+          >
+
+          <p v-if="errorMessage" class="text-sm font-medium text-[#f44336]">
+            {{ errorMessage }}
+          </p>
+
+          <Button
+            type="submit"
+            variant="primary"
+            size="xl"
+            class="mt-4 w-full"
+          >
+            Войти
+          </Button>
+        </form>
       </div>
-    </div>
-    
-    <div class="auth-page__content">
-      <div class="auth-page__header">
-        <h1 class="auth-page__title">Вход</h1>
-        <p class="auth-page__subtitle">Войдите в свой аккаунт</p>
-      </div>
+    </section>
+
+    <section class="relative min-h-[100dvh] overflow-hidden bg-white md:hidden">
       
-      <form class="auth-page__form" @submit.prevent="handleSubmit">
-        <BaseInput
-          v-model="email"
-          type="email"
-          label="Email"
-          placeholder="example@mail.ru"
-          :error="errors.email"
-          required
-        />
-        
-        <BaseInput
-          v-model="password"
-          type="password"
-          label="Пароль"
-          placeholder="Введите пароль"
-          :error="errors.password"
-          required
-        />
-        
-        <BaseButton
-          type="submit"
-          size="lg"
-          :loading="isLoading"
-          :disabled="!isValid"
-          class="auth-page__button"
-        >
-          Войти
-        </BaseButton>
-      </form>
+
+      <main class="flex min-h-[100dvh] flex-col px-4 pt-[clamp(160px,29vh,248px)] pb-[98px]">
+        <h1 class="text-[20px] font-medium leading-6 text-[#1a1a1a]">
+          Вход
+        </h1>
+
+        <form class="mt-4 space-y-2" @submit.prevent="handleSubmit">
+          <input
+            v-model.trim="login"
+            type="text"
+            autocomplete="username"
+            aria-label="Логин"
+            placeholder="Логин"
+            class="h-12 w-full rounded-button border border-transparent bg-[#f3f4f6] px-4 text-sm font-medium leading-5 text-[#1a1a1a] outline-none transition-shadow transition-colors placeholder:text-[#6b6375] focus:border-transparent focus:ring-2 focus:ring-[#3f51b5]/15"
+          >
+
+          <input
+            v-model.trim="password"
+            type="password"
+            autocomplete="current-password"
+            aria-label="Пароль"
+            placeholder="Пароль"
+            class="h-12 w-full rounded-button border border-transparent bg-[#f3f4f6] px-4 text-sm font-medium leading-5 text-[#1a1a1a] outline-none transition-shadow transition-colors placeholder:text-[#6b6375] focus:border-transparent focus:ring-2 focus:ring-[#3f51b5]/15"
+          >
+
+          <p v-if="errorMessage" class="text-sm font-medium text-[#f44336]">
+            {{ errorMessage }}
+          </p>
+
+          <Button
+            type="submit"
+            variant="primary"
+            size="xl"
+            class="mt-4 w-full"
+          >
+            Войти
+          </Button>
+        </form>
+      </main>
+
       
-      <div class="auth-page__footer">
-        <a href="#" class="auth-page__link">Забыли пароль?</a>
-      </div>
-    </div>
-    
-    <div class="auth-page__tabs">
-      <div class="auth-page__tab">
-        <span class="auth-page__tab-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-          </svg>
-        </span>
-        <span>Карта</span>
-      </div>
-      <div class="auth-page__tab">
-        <span class="auth-page__tab-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-          </svg>
-        </span>
-        <span>Профиль</span>
-      </div>
-    </div>
+    </section>
   </div>
 </template>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Flex:wght@400;500;700&display=swap');
+
 .auth-page {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  background: var(--color-white);
-}
-
-.auth-page__status-bar {
-  height: 62px;
-  background: var(--color-white);
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding-bottom: 16px;
-}
-
-.auth-page__status-bar-inner {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  max-width: 361px;
-  padding: 0 16px;
-}
-
-.auth-page__time {
-  font-size: var(--font-size-s);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text-00);
-}
-
-.auth-page__icons {
-  display: flex;
-  gap: 6px;
-}
-
-.auth-page__signal,
-.auth-page__wifi,
-.auth-page__battery {
-  width: 18px;
-  height: 12px;
-  background: var(--color-text-00);
-  border-radius: 2px;
-}
-
-.auth-page__content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  padding: 32px 16px;
-}
-
-.auth-page__header {
-  margin-bottom: 32px;
-  text-align: center;
-}
-
-.auth-page__title {
-  font-size: var(--font-size-3xl);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-text-00);
-  margin: 0 0 8px;
-}
-
-.auth-page__subtitle {
-  font-size: var(--font-size-s);
-  color: var(--color-text-01);
-  margin: 0;
-}
-
-.auth-page__form {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.auth-page__button {
-  width: 100%;
-  margin-top: 12px;
-}
-
-.auth-page__footer {
-  margin-top: 24px;
-  text-align: center;
-}
-
-.auth-page__link {
-  font-size: var(--font-size-s);
-  color: var(--color-primary);
-  text-decoration: none;
-}
-
-.auth-page__link:hover {
-  text-decoration: underline;
-}
-
-.auth-page__tabs {
-  display: flex;
-  height: 82px;
-  background: var(--color-white);
-  border-top: 1px solid var(--color-border);
-}
-
-.auth-page__tab {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  font-size: var(--font-size-xs);
-  color: var(--color-text-02);
-  cursor: pointer;
-  transition: color var(--transition-fast);
-}
-
-.auth-page__tab:first-child {
-  color: var(--color-primary);
-}
-
-.auth-page__tab-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  --color-primary: #3f51b5;
+  --color-primary-hover: #3548a3;
+  --color-primary-80: rgba(63, 81, 181, 0.8);
+  --color-primary-20: rgba(63, 81, 181, 0.2);
+  --color-base-00: #f3f4f6;
+  --color-border: #f3f4f6;
+  font-family: 'Roboto Flex', 'Roboto', sans-serif;
 }
 </style>

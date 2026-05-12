@@ -2,7 +2,7 @@ import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { afterEach, describe, expect, it } from 'vitest'
 import Index from './Index.vue'
-import { mockMarkers, type Marker } from '../../data/mock'
+import { projectFixture, travelFixture } from '../../test/markers'
 import { useMapStore } from '../../stores/map'
 
 const stubs = {
@@ -10,18 +10,14 @@ const stubs = {
   List: { template: '<div data-stub="list" />' },
 }
 
-const project = mockMarkers.find(marker => marker.id === '1')!
+const project = projectFixture
 const secondTask = project.tasks![1]
 const thirdTask = project.tasks![2]
-const travelMarker: Marker = {
-  id: 'travel-test',
-  title: 'Тестовое путешествие',
-  description: '',
-  coordinates: [37.6173, 55.7558],
-  category: 'travel',
-  date: '2026-04-11',
-  city: 'Москва',
-  images: [],
+
+const seedProjects = () => {
+  const store = useMapStore()
+  store.projectMarkers = [project]
+  return store
 }
 
 const flowStubs = {
@@ -29,7 +25,7 @@ const flowStubs = {
   List: {
     emits: ['select', 'close'],
     setup() {
-      return { project, travelMarker }
+      return { project, travelMarker: travelFixture }
     },
     template: `
       <div data-stub="list">
@@ -77,6 +73,7 @@ describe('CardsMobile/Index', () => {
   it('shows tabs and search on the main screen', () => {
     const pinia = createPinia()
     setActivePinia(pinia)
+    seedProjects()
 
     const wrapper = mount(Index, {
       global: {
@@ -148,6 +145,7 @@ describe('CardsMobile/Index', () => {
   it('opens filter panel from the list', async () => {
     const pinia = createPinia()
     setActivePinia(pinia)
+    seedProjects()
 
     const wrapper = mount(Index, {
       global: {
@@ -172,10 +170,10 @@ describe('CardsMobile/Index', () => {
     wrapper.unmount()
   })
 
-  it('opens project task list and selects the first task from the map list', async () => {
+  it('opens project task list without selecting a task by default', async () => {
     const pinia = createPinia()
     setActivePinia(pinia)
-    const store = useMapStore()
+    const store = seedProjects()
 
     const wrapper = mount(Index, {
       global: {
@@ -190,13 +188,14 @@ describe('CardsMobile/Index', () => {
 
     expect(wrapper.find('[data-stub="task-list"]').exists()).toBe(true)
     expect(wrapper.text()).toContain(project.title)
-    expect(store.selectedMarker?.id).toBe(project.tasks![0].id)
+    expect(wrapper.text()).toContain('active -1')
+    expect(store.selectedMarker).toBeNull()
   })
 
   it('opens task description and syncs the selected task', async () => {
     const pinia = createPinia()
     setActivePinia(pinia)
-    const store = useMapStore()
+    const store = seedProjects()
 
     const wrapper = mount(Index, {
       global: {
@@ -220,7 +219,7 @@ describe('CardsMobile/Index', () => {
   it('opens task description with the correct active index from a map marker selection', async () => {
     const pinia = createPinia()
     setActivePinia(pinia)
-    const store = useMapStore()
+    const store = seedProjects()
 
     const wrapper = mount(Index, {
       global: {
@@ -241,6 +240,7 @@ describe('CardsMobile/Index', () => {
   it('returns from task description to task list with the active task preserved', async () => {
     const pinia = createPinia()
     setActivePinia(pinia)
+    seedProjects()
 
     const wrapper = mount(Index, {
       global: {
@@ -270,7 +270,7 @@ describe('CardsMobile/Index', () => {
   it('syncs the selected marker when the task description slider changes', async () => {
     const pinia = createPinia()
     setActivePinia(pinia)
-    const store = useMapStore()
+    const store = seedProjects()
 
     const wrapper = mount(Index, {
       global: {
@@ -307,7 +307,7 @@ describe('CardsMobile/Index', () => {
 
     expect(wrapper.find('[data-stub="description"]').exists()).toBe(true)
     expect(wrapper.find('[data-stub="list"]').exists()).toBe(false)
-    expect(wrapper.text()).toContain(travelMarker.title)
+    expect(wrapper.text()).toContain(travelFixture.title)
 
     await wrapper.find('[data-test="close-description"]').trigger('click')
 
@@ -328,7 +328,7 @@ describe('CardsMobile/Index', () => {
       }
     })
 
-    store.selectMarker(travelMarker)
+    store.selectMarker(travelFixture)
     await wrapper.vm.$nextTick()
 
     expect(wrapper.find('[data-stub="description"]').exists()).toBe(true)
@@ -344,7 +344,7 @@ describe('CardsMobile/Index', () => {
   it('returns from task list to project list and closes the sheet', async () => {
     const pinia = createPinia()
     setActivePinia(pinia)
-    const store = useMapStore()
+    const store = seedProjects()
 
     const wrapper = mount(Index, {
       global: {

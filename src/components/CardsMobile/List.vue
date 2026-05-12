@@ -27,6 +27,17 @@ const projectStatusText = (status: Marker['status']) => {
   return 'В процессе'
 }
 
+const sportTypeIcons: Record<string, string> = {
+  'Бег': 'sport-run',
+  'Кросс-поход': 'sport-cross-hike',
+  'Плавание': 'sport-swim',
+  'Лыжи': 'sport-ski',
+  'Ролики': 'sport-rollers',
+  'Велосипед': 'sport-bike',
+  'Поход': 'sport-hike',
+  'Восхождение': 'sport-climb',
+}
+
 const markers = computed(() => mapStore.filteredMarkers)
 const searchPlaceholder = computed(() => mapStore.category === 'projects' ? 'Поиск проектов...' : 'Поиск...')
 
@@ -77,19 +88,37 @@ const groupedMarkers = computed(() => {
 
 const formatYear = (dateStr: string) => new Date(dateStr).getFullYear()
 
-const formatMeta = (marker: Marker) => {
+const getSportType = (marker: Marker) => marker.sportTypes?.[0] ?? ''
+
+const getSportTypeIcon = (marker: Marker) => {
+  const sportType = getSportType(marker)
+  return sportTypeIcons[sportType] || 'sport'
+}
+
+const getMetaText = (marker: Marker) => {
   const year = formatYear(marker.date)
 
   if (marker.category === 'projects') {
-    return `Старт: ${year} • Финиш: ${projectStatusText(marker.status)}`
+    const parts = [`Старт: ${year}`]
+
+    
+
+    parts.push(`Финиш: ${projectStatusText(marker.status)}`)
+
+    return parts.join(' • ')
   }
 
-  if (marker.category === 'travel') {
-    return `г. ${marker.city}`
+  const parts = []
+
+  if (marker.city) {
+    parts.push(`г. ${marker.city}`)
   }
 
-  const tag = marker.tags?.[0]?.title
-  return tag ? `г. ${marker.city} • ${year} • ${tag}` : `г. ${marker.city} • ${year}`
+  
+
+  parts.push(String(year))
+
+  return parts.join(' • ')
 }
 
 const handleClick = (marker: Marker) => {
@@ -100,6 +129,10 @@ const isSelected = (marker: Marker) => mapStore.selectedMarker?.id === marker.id
 
 const setProjectStatus = (value: StatusFilter) => {
   mapStore.setStatusFilter(value)
+}
+
+const clearDateFilter = () => {
+  mapStore.clearDateRange()
 }
 
 const updateSearch = (event: Event) => {
@@ -152,13 +185,29 @@ const updateSearch = (event: Event) => {
       </div>
 
       <button
-        v-if="displayedMarkers.length > 0"
         type="button"
         class="flex h-8 w-full items-center justify-center gap-2 rounded-button bg-base-light-00 text-sm font-medium leading-5 text-text-dark transition-colors hover:bg-base-light-01"
         @click="emit('open-filter')"
       >
+        <span
+          v-if="mapStore.activeFilterCount > 0"
+          class="flex h-5 min-w-5 items-center justify-center rounded-full bg-secondary-dark px-1.5 text-xs font-normal leading-4 text-white"
+        >
+          {{ mapStore.activeFilterCount }}
+        </span>
         Фильтр
-        <BaseIcon name="filter" class="h-4 w-4" size="16px" />
+        <BaseIcon name="filter-line" class="w-4 h-4" />
+      </button>
+
+      <button
+        v-if="mapStore.dateRangeLabel"
+        type="button"
+        class="inline-flex h-8 w-fit items-center gap-2 rounded-button bg-secondary-dark px-2.5 text-sm font-medium leading-5 text-white"
+        aria-label="Сбросить фильтр по дате"
+        @click="clearDateFilter"
+      >
+        {{ mapStore.dateRangeLabel }}
+        <BaseIcon name="close" class="h-4 w-4" size="16px" />
       </button>
     </div>
 
@@ -183,7 +232,9 @@ const updateSearch = (event: Event) => {
                 v-if="marker.status === 'completed'"
                 class="mt-1 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-secondary-dark text-white"
               >
-                <BaseIcon name="check" class="h-2.5 w-2.5" size="10px" />
+                <svg class="h-2 w-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                </svg>
               </span>
               <span
                 v-else
@@ -194,8 +245,18 @@ const updateSearch = (event: Event) => {
             <span v-else class="mt-2 h-2.5 w-2.5 shrink-0 rounded-full" :class="categoryAccent[marker.category]"></span>
 
             <div class="min-w-0 flex-1">
-              <h3 class="truncate text-lg font-medium leading-6 text-text-dark">{{ marker.title }}</h3>
-              <p class="mt-1 truncate text-xs font-normal leading-4 text-text-01">{{ formatMeta(marker) }}</p>
+              <h3 class="break-words text-body-l font-medium leading-6 text-text-dark">{{ marker.title }}</h3>
+              <p class="mt-1 line-clamp-2 text-sm font-normal text-text-01">{{ marker.description }}</p>
+              <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-text-01">
+                <span>{{ getMetaText(marker) }}</span>
+                <template v-if="marker.category === 'sport' && getSportType(marker)">
+                  <span>•</span>
+                  <span class="inline-flex items-center gap-1">
+                    <BaseIcon :name="getSportTypeIcon(marker)" class="text-text-01" size="16px" />
+                    <span>{{ getSportType(marker) }}</span>
+                  </span>
+                </template>
+              </div>
             </div>
           </button>
         </div>

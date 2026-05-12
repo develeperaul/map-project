@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, computed, onMounted } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { useMapStore } from '../../stores/map'
 import Tabs from '../Tabs.vue'
 import TabItem from '../TabItem.vue'
@@ -76,6 +76,7 @@ const getIconClass = (cat: Category) => {
         :model-value="mapStore.searchQuery"
         placeholder="Поиск"
         left-icon
+        clearable
         @update:model-value="handleSearch"
       />
     </div>

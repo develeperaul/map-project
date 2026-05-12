@@ -42,14 +42,14 @@ export const designTokens = {
   },
   
   typography: {
-    'body-xl': { fontSize: '20px', lineHeight: '28px', fontWeight: '500' },
-    'body-l': { fontSize: '18px', lineHeight: '26px', fontWeight: '500' },
-    'body-m': { fontSize: '16px', lineHeight: '24px', fontWeight: '500' },
-    'body-m-reg': { fontSize: '16px', lineHeight: '24px', fontWeight: '400' },
-    'body-s': { fontSize: '14px', lineHeight: '20px', fontWeight: '500' },
-    'body-s-reg': { fontSize: '14px', lineHeight: '20px', fontWeight: '400' },
-    'body-xs': { fontSize: '12px', lineHeight: '16px', fontWeight: '500' },
-    'body-xs-reg': { fontSize: '12px', lineHeight: '16px', fontWeight: '400' },
+    'body-xl': { fontSize: '20px', lineHeight: '28px'},
+    'body-l': { fontSize: '18px', lineHeight: '26px'},
+    'body-m': { fontSize: '16px', lineHeight: '24px'},
+    'body-m-reg': { fontSize: '16px', lineHeight: '24px'},
+    'body-s': { fontSize: '14px', lineHeight: '20px'},
+    'body-s-reg': { fontSize: '14px', lineHeight: '20px'},
+    'body-xs': { fontSize: '12px', lineHeight: '16px'},
+    'body-xs-reg': { fontSize: '12px', lineHeight: '16px'},
   },
   
   shadows: {

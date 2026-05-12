@@ -1,7 +1,7 @@
 import ky from 'ky'
 import type { Marker } from '../data/mock'
 
-const baseURL = 'https://rad.yes-project.ru'
+const baseURL = 'https://xn--90acilkmp5a.xn--p1ai'
 
 const api = ky.create({
   prefix: baseURL,
@@ -16,6 +16,10 @@ export async function fetchTravelMarkers(): Promise<Marker[]> {
 
 export async function fetchProjectMarkers(): Promise<Marker[]> {
   return await api.get('api/events/projects.php').json<Marker[]>()
+}
+
+export async function fetchSportMarkers(): Promise<Marker[]> {
+  return await api.get('api/events/sport.php').json<Marker[]>()
 }
 
 export interface EventElementProperty {
@@ -42,6 +46,7 @@ export interface EventElementDetails {
   detailText: string
   detailTextType: string
   description: string
+  distance: string
   properties: Record<string, EventElementProperty>
 }
 

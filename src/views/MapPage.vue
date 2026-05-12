@@ -1,7 +1,15 @@
 <script setup lang='ts'>
+import { onMounted } from 'vue'
 import MapView from '../components/MapView.vue'
 import CardsIndex from '../components/Cards/Index.vue'
 import CardsMobileIndex from '../components/CardsMobile/Index.vue'
+import { useMapStore } from '../stores/map'
+
+const mapStore = useMapStore()
+
+onMounted(() => {
+  void mapStore.loadAllCategoryMarkers()
+})
 </script>
 
 <template>

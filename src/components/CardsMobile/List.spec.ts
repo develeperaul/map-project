@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 import List from './List.vue'
 import { useMapStore } from '../../stores/map'
 import type { Marker } from '../../data/mock'
+import { projectListFixtures } from '../../test/markers'
 
 const travelMarkers: Marker[] = [
   {
@@ -14,6 +15,7 @@ const travelMarkers: Marker[] = [
     category: 'travel',
     date: '2024-07-01',
     city: 'Париж',
+    distance: '12 км',
     images: [],
   },
   {
@@ -34,6 +36,7 @@ const travelMarkers: Marker[] = [
     category: 'travel',
     date: '2024-08-20',
     city: 'Лондон',
+    distance: '5 км',
     images: [],
   },
 ]
@@ -61,6 +64,7 @@ describe('CardsMobile/List', () => {
     expect(wrapper.text()).toContain('Биг-Бен')
     expect(wrapper.text()).not.toContain('Эйфелева башня')
     expect(wrapper.text()).not.toContain('Колизей')
+    expect(wrapper.text()).toContain('5 км')
   })
 
   it('shows project status chips and filters by them', async () => {
@@ -68,6 +72,7 @@ describe('CardsMobile/List', () => {
     setActivePinia(pinia)
 
     const store = useMapStore()
+    store.projectMarkers = projectListFixtures
     store.setCategory('projects')
 
     const wrapper = mount(List, {
@@ -80,6 +85,7 @@ describe('CardsMobile/List', () => {
     expect(wrapper.text()).toContain('Все (5)')
     expect(wrapper.text()).toContain('В процессе (3)')
     expect(wrapper.text()).toContain('Завершенные (2)')
+    expect(wrapper.text()).toContain('42 км')
     expect(wrapper.text()).toContain('Фильтр')
 
     const activeChip = wrapper.findAll('button').find((button) => button.text().includes('В процессе'))
@@ -95,6 +101,7 @@ describe('CardsMobile/List', () => {
     setActivePinia(pinia)
 
     const store = useMapStore()
+    store.projectMarkers = projectListFixtures
     store.setCategory('projects')
 
     const wrapper = mount(List, {
@@ -134,6 +141,7 @@ describe('CardsMobile/List', () => {
     setActivePinia(pinia)
 
     const store = useMapStore()
+    store.projectMarkers = projectListFixtures
     store.setCategory('projects')
 
     const wrapper = mount(List, {

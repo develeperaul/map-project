@@ -1,9 +1,9 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import TaskList from './TaskList.vue'
-import { mockMarkers } from '../../data/mock'
+import { projectFixture } from '../../test/markers'
 
-const project = mockMarkers.find(marker => marker.id === '1')!
+const project = projectFixture
 
 const global = {
   stubs: {

@@ -13,8 +13,9 @@ const emit = defineEmits<{
   click: [event: MouseEvent]
 }>()
 
-const iconSize = props.class?.match(/w-(\d+)/)?.[1] 
-  ? props.class.match(/w-(\d+)/)[1] + 'px'
+const sizeMatch = props.class?.match(/w-(\d+)/)
+const iconSize = sizeMatch?.[1]
+  ? `${sizeMatch[1]}px`
   : props.size
 </script>
 
