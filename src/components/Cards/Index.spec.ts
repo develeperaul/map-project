@@ -111,4 +111,30 @@ describe('Cards/Index', () => {
     expect(wrapper.find('[data-stub="list"]').exists()).toBe(true)
     expect(wrapper.find('[data-stub="description"]').exists()).toBe(false)
   })
+
+  it('opens a calendar-only filter from the main search panel', async () => {
+    const pinia = createPinia()
+    setActivePinia(pinia)
+
+    const wrapper = mount(Index, {
+      global: {
+        plugins: [pinia],
+        stubs: {
+          ...stubs,
+          Main: {
+            template: '<button data-stub="main" @click="$emit(\'open-calendar-filter\')" />',
+          },
+          Filter: {
+            props: ['mode'],
+            template: '<div data-stub="filter" :data-mode="mode" />',
+          },
+        },
+      }
+    })
+
+    await wrapper.find('[data-stub="main"]').trigger('click')
+
+    expect(wrapper.find('[data-stub="filter"]').attributes('data-mode')).toBe('calendar')
+    expect(wrapper.find('[data-stub="list"]').exists()).toBe(true)
+  })
 })

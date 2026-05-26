@@ -67,6 +67,12 @@ const groupedMarkers = computed(() => {
 })
 
 const selectedStatus = computed(() => mapStore.statusFilter)
+const showFilterControls = computed(() => mapStore.category !== 'all')
+const categoryAccent: Record<Marker['category'], string> = {
+  projects: 'bg-primary',
+  travel: 'bg-orange',
+  sport: 'bg-purple',
+}
 const sportTypeIcons: Record<string, string> = {
   'Бег': 'sport-run',
   'Кросс-поход': 'sport-cross-hike',
@@ -243,7 +249,7 @@ defineExpose({
       </button>
     </div>
 
-    <div class="  pb-2  ">
+    <div v-if="showFilterControls" class="  pb-2  ">
       <button
         class="w-full h-10 rounded-button bg-base-00 text-text-00 text-body-s font-medium flex items-center justify-center gap-2"
         @click="handleOpenFilter"
@@ -263,6 +269,7 @@ defineExpose({
           :key="`${chip.type}-${chip.label}`"
           type="button"
           class="inline-flex items-center gap-1.5 rounded-button bg-secondary-dark px-2.5 py-1.5 text-sm font-medium leading-5 text-white"
+          :aria-label="chip.type === 'date' ? 'Сбросить фильтр по дате' : undefined"
           @click="removeFilterChip(chip)"
         >
           {{ chip.label }}
@@ -297,25 +304,38 @@ defineExpose({
           @click="handleClick(marker)"
         >
           <div class="flex items-start gap-3">
-            <div
-              v-if="marker.status === 100"
-              class="mt-1 flex h-3 w-3 flex-shrink-0 items-center justify-center rounded-full bg-text-00 text-white"
-            >
-              <svg class="h-2 w-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
+            <template v-if="marker.category === 'projects'">
+              <div
+                v-if="marker.status === 100"
+                class="mt-1 flex h-3 w-3 flex-shrink-0 items-center justify-center rounded-full bg-text-00 text-white"
+              >
+                <svg class="h-2 w-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
 
-            <svg v-else width="14" height="14" viewBox="0 0 14 14" style="transform: rotate(-90deg);">
-                
+              <svg v-else class="bg-primary" width="14" height="14" viewBox="0 0 14 14" style="transform: rotate(-90deg); background-color: transparent;">
                 <circle cx="7" cy="7" r="5.5" fill="none" stroke="#E5E7EB" stroke-width="2"/>
-                <circle cx="7" cy="7" r="5.5" fill="none" stroke="#3F51B5" stroke-width="2"
+                <circle
+                  cx="7"
+                  cy="7"
+                  r="5.5"
+                  fill="none"
+                  stroke="#3F51B5"
+                  stroke-width="2"
                   stroke-linecap="round"
                   pathLength="100"
                   stroke-dasharray="100"
-                  :stroke-dashoffset="marker.status !== undefined ? 100 - marker.status : 100" /> 
-                        
+                  :stroke-dashoffset="marker.status !== undefined ? 100 - marker.status : 100"
+                />
               </svg>
+            </template>
+
+            <span
+              v-else
+              class="mt-2 h-2.5 w-2.5 shrink-0 rounded-full"
+              :class="categoryAccent[marker.category]"
+            ></span>
 
             <div class="min-w-0 flex-1">
               <div class=" flex justify-between gap-2">

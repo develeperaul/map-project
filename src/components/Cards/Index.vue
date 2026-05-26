@@ -12,10 +12,12 @@ import { resolveSelection } from './selection'
 const mapStore = useMapStore()
 
 const sideVisible = ref(true)
+const filterMode = ref<'full' | 'calendar'>('full')
 
 const showContent = computed(() => (
   mapStore.category !== 'all'
   || mapStore.searchQuery.trim() !== ''
+  || mapStore.hasDateFilter
   || mapStore.selectedMarker !== null
   || selectedProject.value !== null
   || mapStore.showFilterPanel
@@ -69,6 +71,7 @@ const applyResolvedSelection = (marker: Marker) => {
 watch(() => mapStore.category, () => {
   selectedProject.value = null
   selectedTaskIndex.value = -1
+  filterMode.value = 'full'
   mapStore.showFilterPanel = false
   mapStore.clearSelection()
 })
@@ -104,13 +107,24 @@ const handleTaskSelect = (task: Marker, index: number) => {
 }
 
 const handleOpenFilter = () => {
+  filterMode.value = 'full'
   mapStore.toggleFilterPanel()
+}
+
+const handleOpenCalendarFilter = () => {
+  filterMode.value = 'calendar'
+  mapStore.showFilterPanel = true
 }
 </script>
 
 <template>
   <div class="flex flex-col gap-2">
-    <Main :side-open="sideVisible" :has-content="showContent" @toggle-side="sideVisible = !sideVisible" />
+    <Main
+      :side-open="sideVisible"
+      :has-content="showContent"
+      @toggle-side="sideVisible = !sideVisible"
+      @open-calendar-filter="handleOpenCalendarFilter"
+    />
     <div v-if="showContent && sideVisible" class="flex gap-2">
       <List 
         v-if="!showTaskList" 
@@ -126,7 +140,7 @@ const handleOpenFilter = () => {
         @select-task="handleTaskSelect"
       />
       
-      <Filter v-if="mapStore.showFilterPanel" />
+      <Filter v-if="mapStore.showFilterPanel" :mode="filterMode" />
       <Description
         v-if="showDescription"
         v-model:task-index="selectedTaskIndex"

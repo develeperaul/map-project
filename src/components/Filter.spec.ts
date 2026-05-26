@@ -259,6 +259,54 @@ describe('Filter', () => {
     expect(store.activeFilterCount).toBe(0)
   })
 
+  it('renders calendar-only mode without applying other filters', async () => {
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const store = useMapStore()
+    store.projectMarkers = [
+      {
+        id: 'project-msk',
+        title: 'Москва',
+        description: '',
+        category: 'projects',
+        date: '2024-01-01',
+        city: 'Москва',
+        status: 100,
+        images: [],
+      },
+    ]
+    store.setCategory('projects')
+    store.setCityFilter(['Москва'])
+
+    const wrapper = mount(Filter, {
+      props: {
+        mode: 'calendar',
+      },
+      global: {
+        plugins: [pinia],
+      },
+    })
+
+    expect(wrapper.text()).toContain('Календарь')
+    expect(wrapper.text()).not.toContain('Локация')
+    expect(wrapper.find('input[placeholder="Поиск по локации..."]').exists()).toBe(false)
+
+    const vm = wrapper.vm as unknown as FilterVm
+    vm.dateRange = {
+      start: new Date(2024, 0, 1),
+      end: new Date(2024, 11, 31),
+    }
+    await findButtonByText(wrapper, 'Применить')?.trigger('click')
+
+    expect(store.dateRange).toEqual({ start: '2024-01-01', end: '2024-12-31' })
+    expect(store.cityFilter).toEqual(['Москва'])
+
+    await findButtonByText(wrapper, 'Сбросить')?.trigger('click')
+
+    expect(store.dateRange).toEqual({ start: null, end: null })
+    expect(store.cityFilter).toEqual(['Москва'])
+  })
+
   it('closes without applying unsaved date changes', async () => {
     const pinia = createPinia()
     setActivePinia(pinia)

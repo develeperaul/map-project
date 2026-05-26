@@ -3,7 +3,6 @@ import { ref, watch, onMounted } from 'vue'
 import { useMapStore } from '../../stores/map'
 import Tabs from '../Tabs.vue'
 import TabItem from '../TabItem.vue'
-import Input from '../Input.vue'
 import BaseIcon from '../BaseIcon.vue'
 import type { Category } from '../../data/mock'
 const mapStore = useMapStore()
@@ -15,6 +14,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   toggleSide: []
+  'open-calendar-filter': []
 }>()
 
 const activeTab = ref<Category | ''>('')
@@ -45,6 +45,19 @@ const handleSearch = (value: string) => {
     mapStore.clearSelection()
   }
   mapStore.setSearchQuery(value)
+}
+
+const handleSearchInput = (event: Event) => {
+  handleSearch((event.target as HTMLInputElement).value)
+}
+
+const openCalendarFilter = () => {
+  if (mapStore.category !== 'all') return
+  emit('open-calendar-filter')
+}
+
+const clearDateFilter = () => {
+  mapStore.clearDateRange()
 }
 
 const refresh = () => {
@@ -93,13 +106,34 @@ const getIconClass = (cat: Category) => {
         </TabItem>
       </Tabs>
       
-      <Input
-        :model-value="mapStore.searchQuery"
-        placeholder="Поиск"
-        left-icon
-        clearable
-        @update:model-value="handleSearch"
-      />
+      <label class="flex h-12 items-center justify-between gap-3 rounded-button bg-base-light-00 py-2 pl-4 pr-3">
+        <span class="flex min-w-0 flex-1 items-center gap-2">
+          <BaseIcon name="search" class="h-4 w-4 shrink-0 text-text-01" size="16px" />
+          <input
+            :value="mapStore.searchQuery"
+            type="search"
+            placeholder="Поиск..."
+            class="min-w-0 flex-1 bg-transparent text-body-s font-medium leading-5 text-text-dark outline-none placeholder:text-text-01"
+            @input="handleSearchInput"
+          >
+        </span>
+
+        <button
+          v-if="mapStore.category === 'all'"
+          type="button"
+          class="flex h-8 shrink-0 items-center justify-center gap-2 rounded-button bg-white px-2.5 text-body-s font-medium leading-5 text-text-dark"
+          :aria-label="mapStore.dateRangeLabel ? 'Сбросить фильтр по дате' : 'Открыть фильтр по годам'"
+          @click.prevent="mapStore.dateRangeLabel ? clearDateFilter() : openCalendarFilter()"
+        >
+          <span>{{ mapStore.dateRangeLabel || 'Все года' }}</span>
+          <BaseIcon
+            v-if="mapStore.dateRangeLabel"
+            name="close"
+            class="h-4 w-4 text-red"
+            size="16px"
+          />
+        </button>
+      </label>
     </div>
     <div class="absolute right-0 top-4 transform translate-x-full w-fit grid gap-3">
 

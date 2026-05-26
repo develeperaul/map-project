@@ -10,8 +10,10 @@ import { useMapStore } from '../stores/map'
 
 const props = withDefaults(defineProps<{
   embedded?: boolean
+  mode?: 'full' | 'calendar'
 }>(), {
   embedded: false,
+  mode: 'full',
 })
 
 const emit = defineEmits<{
@@ -50,6 +52,7 @@ const formatDateForStore = (value: Date | null) => {
 }
 
 const isSport = computed(() => mapStore.category === 'sport')
+const isCalendarMode = computed(() => props.mode === 'calendar')
 
 const dateRange = ref<{ start: Date | null; end: Date | null }>({
   start: parseDateString(mapStore.dateRange.start),
@@ -116,6 +119,12 @@ const resetFilter = () => {
   locationSearch.value = ''
   tagSearch.value = ''
   dateRange.value = { start: null, end: null }
+
+  if (isCalendarMode.value) {
+    mapStore.clearDateRange()
+    return
+  }
+
   selectedSports.value = []
   selectedLocations.value = []
   selectedTags.value = []
@@ -132,6 +141,13 @@ const handleApply = () => {
     start: formatDateForStore(dateRange.value.start),
     end: formatDateForStore(dateRange.value.end),
   })
+
+  if (isCalendarMode.value) {
+    mapStore.applyFilters()
+    emit('close')
+    return
+  }
+
   mapStore.setCityFilter([...selectedLocations.value])
   if (isSport.value) {
     mapStore.setSportTypeFilter([...selectedSports.value])
@@ -162,7 +178,7 @@ const handleApply = () => {
       <section>
         <Calendar v-model="dateRange" />
       </section>
-      <template v-if="isSport">
+      <template v-if="!isCalendarMode && isSport">
         <div class="h-[1px] bg-border" />
   
         <section  class="space-y-4">
@@ -197,7 +213,7 @@ const handleApply = () => {
           />
         </section>
       </template>
-      <template v-if="filteredLocations.length > 0 " >
+      <template v-if="!isCalendarMode && (mapStore.locations.length > 0 || normalizeSearch(locationSearch))" >
 
         <div class="h-[1px] bg-border" />
   
@@ -233,7 +249,7 @@ const handleApply = () => {
           />
         </section>
       </template>
-      <template v-if="isSport && filteredTags.length > 0" >
+      <template v-if="!isCalendarMode && isSport && filteredTags.length > 0" >
         <div class="h-[1px] bg-border" />
   
         <section v-if="isSport" class="space-y-4">
