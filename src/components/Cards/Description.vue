@@ -37,7 +37,7 @@ const currentTask = computed(() => {
   return props.tasks[Math.min(props.taskIndex, props.tasks.length - 1)] || marker.value
 })
 
-const completedCount = computed(() => props.tasks.filter(task => task.status === 'completed').length)
+const completedCount = computed(() => props.tasks.filter(task => task.status === 100).length)
 const totalCount = computed(() => props.tasks.length)
 
 const monthNames = [
@@ -85,9 +85,6 @@ const activeImageCaption = computed(() => (
 ))
 const distanceLabel = computed(() => currentTask.value?.distance || marker.value?.distance || '')
 const activeImageLocation = computed(() => activeGalleryImage.value?.city || currentTask.value?.city || '')
-
-const canGoPrev = computed(() => hasTasks.value && props.taskIndex > 0)
-const canGoNext = computed(() => hasTasks.value && props.taskIndex < props.tasks.length - 1)
 
 const handleClose = () => {
   closeGallery()
@@ -152,19 +149,20 @@ const unlockDocumentScroll = () => {
 }
 
 const goPrev = () => {
-  if (!canGoPrev.value) return
+  if (!hasTasks.value) return
   closeGallery()
-  emit('update:taskIndex', props.taskIndex - 1)
+  transitionName.value = 'task-back'
+  emit('update:taskIndex', (props.taskIndex - 1 + props.tasks.length) % props.tasks.length)
 }
 
 const goNext = () => {
-  if (!canGoNext.value) return
+  if (!hasTasks.value) return
   closeGallery()
-  emit('update:taskIndex', props.taskIndex + 1)
+  transitionName.value = 'task-forward'
+  emit('update:taskIndex', (props.taskIndex + 1) % props.tasks.length)
 }
 
-watch(() => props.taskIndex, (value, oldValue) => {
-  transitionName.value = value >= oldValue ? 'task-forward' : 'task-back'
+watch(() => props.taskIndex, () => {
   isExpanded.value = false
   closeGallery()
 })
@@ -194,9 +192,9 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div v-if="currentTask" class="w-[409px] min-h-[640px] bg-white rounded-card border border-border p-6  relative flex flex-col">
+  <div v-if="currentTask" class="w-[409px] min-h-[640px] bg-white rounded-card border border-border p-6  relative flex flex-col" style="box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.30), 0 2px 6px 2px rgba(0, 0, 0, 0.15);">
     <button
-      class=" mr-0 ml-auto mb-4 flex h-10 w-10 items-center justify-center rounded-button bg-base-00 text-text-01 hover:text-text-00 transition-colors"
+      class=" mr-0 ml-auto mb-4 flex h-10 w-10 items-center justify-center rounded-button bg-base-00 text-text-00 hover:text-text-00 transition-colors"
       @click="handleClose"
     >
       <BaseIcon name="close" class="w-5 h-5" />
@@ -230,10 +228,7 @@ onBeforeUnmount(() => {
             </h3>
 
             <div v-if="currentTask.city || distanceLabel" class="mt-1 flex items-center gap-2 text-sm text-text-01">
-              <svg class="h-4 w-4 flex-shrink-0 text-text-01" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 21s6-4.35 6-10a6 6 0 10-12 0c0 5.65 6 10 6 10z" />
-                <circle cx="12" cy="11" r="2.5" stroke-width="2" />
-              </svg>
+              <BaseIcon name="location" class="h-4 w-4 flex-shrink-0 text-text-01" />
               <span v-if="currentTask.city">{{ currentTask.city }}</span>
               <span v-if="currentTask.city && distanceLabel">•</span>
               <span v-if="distanceLabel">{{ distanceLabel }}</span>
@@ -271,10 +266,10 @@ onBeforeUnmount(() => {
 
       <div v-if="hasTasks" class="mt-auto pt-6 flex flex-col items-center gap-3">
         <div class="flex w-full gap-2">
-          <Button variant="base" size="lg" class="flex-1" :disabled="!canGoPrev" @click="goPrev">
+          <Button variant="base" size="lg" class="flex-1" @click="goPrev">
             Назад
           </Button>
-          <Button variant="primary" size="lg" class="flex-1" :disabled="!canGoNext" @click="goNext">
+          <Button variant="primary" size="lg" class="flex-1" @click="goNext">
             Далее
           </Button>
         </div>

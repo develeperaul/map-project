@@ -147,7 +147,7 @@ export const useMapStore = defineStore('map', () => {
   const category = ref<Category | 'all'>('all')
   const selectedMarker = ref<Marker | null>(null)
   const searchQuery = ref('')
-  const statusFilter = ref<'all' | 'active' | 'completed'>('all')
+  const statusFilter = ref<'all' | 'active' | 100>('all')
   const mapCenter = ref<[number, number]>([37.6173, 55.7558])
   const mapZoom = ref(3)
 
@@ -347,7 +347,7 @@ export const useMapStore = defineStore('map', () => {
     searchQuery.value = query
   }
 
-  function setStatusFilter(filter: 'all' | 'active' | 'completed') {
+  function setStatusFilter(filter: 'all' | 'active' | 100) {
     statusFilter.value = filter
   }
 

@@ -253,15 +253,15 @@ const handleReset = () => {
 <template>
   <div class="w-full max-w-[380px]">
     <div class="space-y-4">
-      <h3 class="text-[16px] font-semibold leading-6 text-text-00">Календарь</h3>
+      <h3 class="text-[16px] font-font-medium leading-6 text-text-00">Календарь</h3>
 
-      <div class="space-y-1">
+      <div >
         <p class="text-xs leading-4 text-text-02">Выбранный период</p>
         <p class="text-[16px] leading-6 text-text-00">{{ displayRangeText }}</p>
       </div>
     </div>
 
-    <div class="mt-4 flex items-center justify-between">
+    <div class="mt-2 flex items-center justify-between">
       <button type="button" class="text-sm font-medium leading-5 text-primary underline underline-offset-2">
         {{ currentMonthName }} {{ currentYear }}
       </button>
@@ -269,7 +269,7 @@ const handleReset = () => {
       <div class="flex items-center gap-2">
         <button
           type="button"
-          class="flex h-10 w-10 items-center justify-center rounded-[10px] bg-base-00 text-text-01 transition-colors hover:bg-base-01 disabled:cursor-not-allowed disabled:opacity-50"
+          class="flex h-10 w-10 items-center justify-center rounded-[10px] bg-base-00 text-text-00 transition-colors hover:bg-base-01 disabled:cursor-not-allowed disabled:opacity-50"
           :disabled="!canGoPrevMonth"
           aria-label="Предыдущий месяц"
           @click="prevMonth"
@@ -278,7 +278,7 @@ const handleReset = () => {
         </button>
         <button
           type="button"
-          class="flex h-10 w-10 items-center justify-center rounded-[10px] bg-base-00 text-text-01 transition-colors hover:bg-base-01 disabled:cursor-not-allowed disabled:opacity-50"
+          class="flex h-10 w-10 items-center justify-center rounded-[10px] bg-base-00 text-text-00 transition-colors hover:bg-base-01 disabled:cursor-not-allowed disabled:opacity-50"
           :disabled="!canGoNextMonth"
           aria-label="Следующий месяц"
           @click="nextMonth"
@@ -288,7 +288,7 @@ const handleReset = () => {
       </div>
     </div>
 
-    <div class="mt-4 border-t border-border pt-2">
+    <div class="mt-3 border-t border-border pt-1">
       <div class="grid grid-cols-7">
         <div
           v-for="weekday in weekdayLabels"

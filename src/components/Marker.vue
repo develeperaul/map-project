@@ -68,7 +68,7 @@ const markerStyle = computed(() => ({
     <div class="marker-pin__shape" aria-hidden="true">
       <span class="marker-pin__tail marker-pin__tail--outer"></span>
       <span class="marker-pin__circle marker-pin__circle--outer"></span>
-      <span class="marker-pin__tail marker-pin__tail--inner"></span>
+      <!-- <span class="marker-pin__tail marker-pin__tail--inner"></span> -->
 
       <span class="marker-pin__circle marker-pin__circle--inner">
         <BaseIcon
@@ -93,15 +93,22 @@ const markerStyle = computed(() => ({
   height: 67px;
   cursor: pointer;
   color: var(--marker-icon-color);
-  transform-origin: 25px 57px;
+  /* Сдвигаем пин так, чтобы его нижняя точка (хвостик) совпала с координатами на карте.
+     Используем margin вместо transform, т.к. Yandex Maps API 3.0 использует
+     CSS transforms для позиционирования и конфликтует с кастомным transform. */
+  margin-left: -25px;
+  margin-top: -57px;
+}
+
+.marker-pin__shape {
   transition: transform 160ms ease;
 }
 
-.marker-pin--hover {
+.marker-pin--hover .marker-pin__shape {
   transform: translateY(-1px);
 }
 
-.marker-pin--click {
+.marker-pin--click .marker-pin__shape {
   transform: translateY(1px);
 }
 

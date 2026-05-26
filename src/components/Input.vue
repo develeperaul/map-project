@@ -75,7 +75,7 @@ const handleClear = () => {
 <template>
   <div class="flex flex-col gap-1">
     <div 
-      class="flex items-center gap-2 rounded-button border transition-colors duration-200"
+      class="flex items-center gap-2 rounded-button border transition-colors duration-200 lg:h-12"
       :class="[sizeClasses[size], borderClasses]"
     >
       <slot name="leftIcon">

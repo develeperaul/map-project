@@ -18,8 +18,9 @@ const emit = defineEmits<{
 
 const tasks = computed(() => props.project.tasks || [])
 const taskRefs = ref<Record<string, HTMLElement | null>>({})
-
-const completedCount = computed(() => tasks.value.filter(task => task.status === 'completed').length)
+const projectStartYear = computed(() => new Date(props.project.date).getFullYear())
+const projectEndLabel = computed(() => (isCompleted(props.project.status) ? 'Завершен' : 'В процессе'))
+const completedCount = computed(() => tasks.value.filter(task => task.status === 100).length)
 const totalCount = computed(() => tasks.value.length)
 const activeTaskId = computed(() => tasks.value[props.activeTaskIndex]?.id ?? null)
 
@@ -38,7 +39,7 @@ const monthNames = [
   'Декабрь',
 ]
 
-const isCompleted = (status: Marker['status']) => status === 'completed'
+const isCompleted = (status: Marker['status']) => status === 100
 
 const formatMonthYear = (dateStr: string) => {
   const date = new Date(dateStr)
@@ -62,7 +63,7 @@ watch(activeTaskId, async (id) => {
 
 <template>
   <div class="flex h-full min-h-0 flex-col bg-white px-4 pb-6">
-    <div class="shrink-0 pb-6">
+    <div class="shrink-0 ">
       <div class="flex items-start gap-4">
         <button
           type="button"
@@ -91,38 +92,65 @@ watch(activeTaskId, async (id) => {
       </div>
     </div>
 
+    <div class="my-4 flex items-center justify-center gap-2 text-body-xs text-text-01">
+      <span>Старт: {{ projectStartYear }}</span>
+      <span>•</span>
+      <span>Финиш:
+        <span class=" text-text-00">
+          {{ projectEndLabel }}
+        </span>
+      </span>
+    </div>
+
     <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-      <button
-        v-for="(task, index) in tasks"
-        :key="task.id"
-        type="button"
-        class="flex w-full cursor-pointer items-start gap-4 px-3 py-4 text-left transition-colors hover:bg-base-light-00"
-        :class="{ 'bg-base-light-00': index === activeTaskIndex }"
-        :data-task-active="index === activeTaskIndex"
-        :ref="el => setTaskRef(task.id, el)"
-        @click="emit('select', task, index)"
-      >
-        <span class="mt-1 flex h-6 w-4 shrink-0 items-start justify-center">
-          <span
-            v-if="isCompleted(task.status)"
-            class="flex h-4 w-4 items-center justify-center rounded-full bg-secondary-dark text-white"
-          >
-            <svg class="h-2 w-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+      <template v-for="(task, index) in tasks"
+        :key="task.id">
+
+        <button
+          
+          type="button"
+          class="flex w-full cursor-pointer items-start gap-4  py-4 text-left transition-colors hover:bg-base-light-00"
+          :class="{ 'bg-base-light-00': index === activeTaskIndex }"
+          :data-task-active="index === activeTaskIndex"
+          :ref="el => setTaskRef(task.id, el)"
+          @click="emit('select', task, index)"
+        >
+          <span class="mt-1 flex h-6 w-4 shrink-0 items-start justify-center">
+            <span
+              v-if="isCompleted(task.status)"
+              class="flex h-4 w-4 items-center justify-center rounded-full bg-secondary-dark text-white"
+            >
+              <svg class="h-2 w-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+              </svg>
+            </span>
+            <svg v-else width="14" height="14" viewBox="0 0 14 14" style="transform: rotate(-90deg);">
+              <circle cx="7" cy="7" r="5.5" fill="none" stroke="#E5E7EB" stroke-width="2"/>
+              <circle cx="7" cy="7" r="5.5" fill="none" stroke="#3F51B5" stroke-width="2"
+                stroke-linecap="round"
+                pathLength="100"
+                stroke-dasharray="100"
+                :stroke-dashoffset="50" /> 
+                      
             </svg>
           </span>
-          <span v-else class="mt-px h-3.5 w-3.5 rounded-full border-2 border-primary bg-white"></span>
-        </span>
-
-        <span class="min-w-0 flex-1">
-          <span class="block truncate text-lg font-medium leading-6 text-text-dark">{{ task.title }}</span>
-          <span class="mt-1 block truncate text-xs font-normal leading-4 text-text-01">{{ task.city }}</span>
-          <span class="mt-2 line-clamp-2 text-sm font-normal leading-5 text-text-01">{{ task.description }}</span>
-          <span v-if="task.date" class="mt-2 block text-xs font-normal leading-4 text-text-muted">
-            {{ formatMonthYear(task.date) }}
+  
+          <span class="min-w-0 flex-1">
+            <span class="block truncate text-lg font-medium leading-6 text-text-dark">{{ task.title }}</span>
+            <div class="flex gap-2 items-center">
+              <BaseIcon name="location" class="h-3 w-3 flex-shrink-0 text-text-01" />
+              <span class="mt-1 block truncate text-xs font-normal leading-4 text-text-01">{{ task.city }}</span>
+            </div>
+            <span v-if=" task.description" class="mt-2 line-clamp-2 text-sm font-normal leading-5 text-text-01">{{ task.description }}</span>
+            <span v-if="task.date" class="mt-1 block text-xs font-normal leading-4 text-text-muted">
+              {{ formatMonthYear(task.date) }}
+            </span>
           </span>
-        </span>
-      </button>
+        </button>
+        <div class="border-b border-border last:border-b-0 mx-0 my-2">
+  
+        </div>
+      </template>
 
       <div v-if="tasks.length === 0" class="p-4 text-center text-sm text-text-01">
         Нет задач

@@ -36,7 +36,7 @@ provide('TabsContext', {
     :class="[
       variant === 'underline' 
         ? 'border-b border-border' 
-        : 'gap-1 p-1 bg-base-00 rounded-button'
+        : 'gap-1 p-1  rounded-button'
     ]"
   >
     <slot />

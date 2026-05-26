@@ -53,6 +53,7 @@ describe('Filter', () => {
         category: 'projects',
         date: '2024-01-01',
         city: 'Москва',
+        status: 100,
         images: [],
       },
       {
@@ -62,6 +63,7 @@ describe('Filter', () => {
         category: 'projects',
         date: '2024-01-01',
         city: 'Казань',
+        status: 100,
         images: [],
       },
     ]
@@ -102,6 +104,7 @@ describe('Filter', () => {
         category: 'projects',
         date: '2024-06-15',
         city: 'Москва',
+        status: 100,
         images: [],
       },
     ]
@@ -202,6 +205,7 @@ describe('Filter', () => {
         category: 'projects',
         date: '2024-01-01',
         city: 'Москва',
+        status: 100,
         images: [],
       },
       {
@@ -211,6 +215,7 @@ describe('Filter', () => {
         category: 'projects',
         date: '2024-01-01',
         city: 'Казань',
+        status: 100,
         images: [],
       },
     ]

@@ -55,7 +55,8 @@ const handleClear = () => {
   <template v-if="mode === 'inline'">
     <button
       type="button"
-      class="flex h-10 w-full items-center gap-3 rounded-button border border-border bg-white px-4 text-left shadow-[0_4px_20px_rgba(20,20,20,0.08)]"
+      class="flex h-12 w-full items-center gap-3 rounded-button border border-border bg-white px-4 text-left "
+      style="box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.30), 0 2px 6px 2px rgba(0, 0, 0, 0.15);"
       @click="emit('open')"
       @focus="emit('open')"
     >
@@ -110,8 +111,8 @@ const handleClear = () => {
               <svg class="w-6 h-6 -rotate-90" viewBox="0 0 24 24">
                 <circle cx="12" cy="12" r="10" fill="none" stroke="#E5E4E7" stroke-width="2" />
                 <circle v-if="typeof marker.status === 'number'" cx="12" cy="12" r="10" fill="none" stroke="#4527A0" stroke-width="2" stroke-linecap="round" />
-                <circle v-else-if="marker.status === 'completed'" cx="12" cy="12" r="10" fill="#1A1A1A" />
-                <svg v-if="marker.status === 'completed'" class="w-3 h-3 absolute inset-0 m-auto text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <circle v-else-if="marker.status === 100" cx="12" cy="12" r="10" fill="#1A1A1A" />
+                <svg v-if="marker.status === 100" class="w-3 h-3 absolute inset-0 m-auto text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
                 </svg>
               </svg>

@@ -90,7 +90,7 @@ export interface Marker {
   date: string           // год-месяц-день
   city: string
   tags?: Tag[]
-  status?: number | 'completed'  // прогресс (0-100) или завершён
+  status?: number | 100  // прогресс (0-100) или завершён
   images: MarkerImage[]
   tasks?: Marker[]     // задачи проекта
 }

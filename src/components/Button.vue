@@ -1,6 +1,6 @@
 <script setup lang="ts">
 interface Props {
-  variant?: 'primary' | 'secondary' | 'base' | 'outline' | 'ghost' | 'white'
+  variant?: 'primary' | 'secondary' | 'base' | 'outline' | 'ghost' | 'white' | 'dark'
   size?: 'sm' | 'md' | 'lg' | 'xl'
   disabled?: boolean
   loading?: boolean
@@ -30,8 +30,8 @@ const variantStyles = {
     disabled: 'bg-secondary-75 text-white/50 cursor-not-allowed',
   },
   base: {
-    default: 'bg-base-00 text-text-00 border border-border hover:bg-base-01 active:bg-base-02',
-    disabled: 'bg-base-00 text-text-02 border border-border opacity-50 cursor-not-allowed',
+    default: 'bg-base-00 text-text-00  hover:bg-base-01 active:bg-base-02',
+    disabled: 'bg-base-00 text-text-02  opacity-50 cursor-not-allowed',
   },
   outline: {
     default: 'bg-transparent text-primary border border-primary hover:bg-primary-20 active:bg-primary-10',
@@ -44,6 +44,10 @@ const variantStyles = {
   white: {
     default: 'bg-white text-text-00 border border-border hover:bg-base-00 active:bg-base-01',
     disabled: 'bg-white text-text-disabled border border-border opacity-50 cursor-not-allowed',
+  },
+  dark: {
+    default: 'bg-secondary-dark text-white hover:bg-text-dark active:bg-text-00',
+    disabled: 'bg-secondary-dark text-white/50 cursor-not-allowed',
   },
 }
 </script>

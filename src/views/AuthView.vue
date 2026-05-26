@@ -123,8 +123,6 @@ const handleSubmit = () => {
 </template>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Roboto+Flex:wght@400;500;700&display=swap');
-
 .auth-page {
   --color-primary: #3f51b5;
   --color-primary-hover: #3548a3;
@@ -132,6 +130,5 @@ const handleSubmit = () => {
   --color-primary-20: rgba(63, 81, 181, 0.2);
   --color-base-00: #f3f4f6;
   --color-border: #f3f4f6;
-  font-family: 'Roboto Flex', 'Roboto', sans-serif;
 }
 </style>

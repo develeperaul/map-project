@@ -16,6 +16,7 @@ const travelMarkers: Marker[] = [
     date: '2024-07-01',
     city: 'Париж',
     distance: '12 км',
+    status: 100,
     images: [],
   },
   {
@@ -26,6 +27,7 @@ const travelMarkers: Marker[] = [
     category: 'travel',
     date: '2024-07-15',
     city: 'Рим',
+    status: 100,
     images: [],
   },
   {
@@ -37,6 +39,7 @@ const travelMarkers: Marker[] = [
     date: '2024-08-20',
     city: 'Лондон',
     distance: '5 км',
+    status: 100,
     images: [],
   },
 ]

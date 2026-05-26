@@ -76,6 +76,8 @@ const unlockDocumentScroll = () => {
 
 const emitHeight = () => {
   if (panelRef.value) {
+    console.log(panelRef.value.offsetHeight);
+    
     emit('height-change', panelRef.value.offsetHeight)
   }
 }

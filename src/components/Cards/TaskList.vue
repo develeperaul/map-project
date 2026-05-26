@@ -21,10 +21,10 @@ const emit = defineEmits<{
 const tasks = computed(() => props.project.tasks || [])
 const taskRefs = ref<Record<string, HTMLElement | null>>({})
 
-const completedCount = computed(() => tasks.value.filter(task => task.status === 'completed').length)
+const completedCount = computed(() => tasks.value.filter(task => task.status === 100).length)
 const totalCount = computed(() => tasks.value.length)
 
-const isCompleted = (status: number | 'completed' | undefined) => status === 'completed'
+const isCompleted = (status: number | undefined) => status === 100
 
 const monthNames = [
   'Январь',
@@ -76,11 +76,11 @@ defineExpose({
 </script>
 
 <template>
-  <div class="w-[409px] bg-white rounded-card border border-border flex flex-col">
-    <div class="p-4 border-b border-border">
+  <div class="w-[409px] bg-white rounded-card border border-border flex flex-col max-h-[calc(100vh-250px)] overflow-y-auto p-6" style="box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.30), 0 2px 6px 2px rgba(0, 0, 0, 0.15);">
+    <div class="pb-4 ">
       <div class="flex items-start gap-3">
         <button
-          class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-button bg-base-00 text-text-01 hover:text-text-00 transition-colors"
+          class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-button bg-base-00 text-text-00 hover:text-text-00 transition-colors"
           @click="emit('back')"
         >
           <BaseIcon name="caret-left" class="w-5 h-5" />
@@ -88,49 +88,71 @@ defineExpose({
 
         <div class="min-w-0 flex-1 text-center pr-10">
           <h3 class="text-base font-medium text-text-00 truncate">{{ project.title }}</h3>
-          <p class="mt-1 text-sm text-text-01">Выполнено {{ completedCount }}/{{ totalCount }}</p>
+          <p class="text-sm text-text-01">Выполнено {{ completedCount }}/{{ totalCount }}</p>
         </div>
       </div>
 
-      <div class="mt-6 flex items-center justify-center gap-2 text-sm text-text-01">
+      <div class="mt-4 flex items-center justify-center gap-2 text-sm text-text-01">
         <span>Старт: {{ projectStartYear }}</span>
         <span>•</span>
-        <span>Финиш: {{ projectEndLabel }}</span>
+        <span>Финиш:
+          <span class=" text-text-00">
+            {{ projectEndLabel }}
+          </span>
+        </span>
       </div>
     </div>
 
-    <div class="flex-1 overflow-y-auto max-h-[calc(100vh-300px)]">
-      <div
-        v-for="(task, index) in tasks"
-        :key="task.id"
-        class="px-4 py-5 border-b border-border last:border-b-0 cursor-pointer hover:bg-base-00 transition-colors"
-        :class="{ 'bg-base-00': index === activeTaskIndex }"
-        :data-task-active="index === activeTaskIndex"
-        :ref="el => setTaskRef(task.id, el)"
-        @click="handleTaskClick(task, index)"
-      >
-        <div class="flex items-start gap-3">
-          <div
-            class="mt-1 flex h-3 w-3 flex-shrink-0 items-center justify-center rounded-full"
-            :class="isCompleted(task.status) ? 'bg-text-00 text-white' : 'border border-primary bg-white'"
-          >
-            <svg v-if="isCompleted(task.status)" class="h-2 w-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
-            </svg>
-            <div v-else class="h-1.5 w-1.5 rounded-full bg-primary"></div>
-          </div>
+    <div >
+      <template v-for="(task, index) in tasks"
+          :key="task.id">
 
-          <div class="min-w-0 flex-1">
-            <h4 class="text-base font-medium text-text-00 truncate">{{ task.title }}</h4>
-            <p class="mt-1 text-sm  truncate">
-              <BaseIcon name="location" class="w-4 h-4 inline-block mr-1" />
-              {{ task.city }}
-            </p>
-            <p class="mt-1 line-clamp-2 text-sm text-text-01">{{ task.description }}</p>
-            <p class="mt-1 text-sm text-text-01">{{ formatMonthYear(task.date) }}</p>
+        <div
+          
+          class="group py-4 -mx-4 px-4  rounded-2xl  cursor-pointer hover:bg-base-00 transition-colors"
+          :class="{ 'bg-base-00': index === activeTaskIndex }"
+          :data-task-active="index === activeTaskIndex"
+          :ref="el => setTaskRef(task.id, el)"
+          @click="handleTaskClick(task, index)"
+        >
+          <div class="flex items-start gap-4">
+            <div
+              class="mt-1 flex h-3 w-3 flex-shrink-0 items-center justify-center rounded-full"
+              :class="[isCompleted(task.status) ? 'bg-text-00 text-white group-hover:bg-text-01' : '', 
+                { 'bg-text-01': index === activeTaskIndex }
+              ]"
+              
+            >
+              <svg v-if="isCompleted(task.status)" class="h-2 w-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+              </svg>
+              <svg v-else width="14" height="14" viewBox="0 0 14 14" style="transform: rotate(-90deg);">
+                
+                <circle cx="7" cy="7" r="5.5" fill="none" stroke="#E5E7EB" stroke-width="2"/>
+                <circle cx="7" cy="7" r="5.5" fill="none" stroke="#3F51B5" stroke-width="2"
+                  stroke-linecap="round"
+                  pathLength="100"
+                  stroke-dasharray="100"
+                  :stroke-dashoffset="50" /> 
+                        
+              </svg>
+            </div>
+  
+            <div class="min-w-0 flex-1">
+              <h4 class="text-base font-medium text-text-00 truncate">{{ task.title }}</h4>
+              <p class="mt-1 text-sm  truncate">
+                <BaseIcon name="location" class="w-4 h-4 inline-block mr-1" />
+                {{ task.city }}
+              </p>
+              <p class="mt-1 line-clamp-2 text-sm text-text-01">{{ task.description }}</p>
+              <p class="mt-1 text-sm text-text-01">{{ formatMonthYear(task.date) }}</p>
+            </div>
           </div>
         </div>
-      </div>
+        <div class="border-b border-border last:border-b-0 mx-2 my-2">
+  
+        </div>
+      </template>
 
       <div v-if="tasks.length === 0" class="p-4 text-center text-text-01 text-sm">
         Нет задач

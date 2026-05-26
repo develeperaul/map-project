@@ -21,7 +21,7 @@ export interface Marker {
   city: string
   distance?: string
   tags?: Tag[]
-  status?: number | 'completed'
+  status?: number
   sportTypes?: string[]
   images: MarkerImage[]
   tasks?: Marker[]

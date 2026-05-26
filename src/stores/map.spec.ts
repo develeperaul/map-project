@@ -11,6 +11,7 @@ function createTask(id: string, coordinates?: [number, number]): Marker {
     category: 'projects',
     date: '2026-04-01',
     city: '',
+    status: 100,
     images: [],
     coordinates,
   }
@@ -24,6 +25,7 @@ function createSportMarker(id: string, sportTypes: string[], tags: Marker['tags'
     category: 'sport',
     date: '2026-04-01',
     city: '',
+    status: 100,
     images: [],
     sportTypes,
     tags,
@@ -38,6 +40,7 @@ function createProjectMarker(id: string, date: string): Marker {
     category: 'projects',
     date,
     city: 'Москва',
+    status: 100,
     images: [],
     tasks: [
       createTask(`${id}-task`, [37, 55]),
@@ -53,6 +56,7 @@ function createTravelMarker(id: string, city: string): Marker {
     category: 'travel',
     date: '2024-06-01',
     city,
+    status: 100,
     images: [],
   }
 }

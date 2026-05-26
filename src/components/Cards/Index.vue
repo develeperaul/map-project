@@ -11,6 +11,8 @@ import { resolveSelection } from './selection'
 
 const mapStore = useMapStore()
 
+const sideVisible = ref(true)
+
 const showContent = computed(() => (
   mapStore.category !== 'all'
   || mapStore.searchQuery.trim() !== ''
@@ -108,8 +110,8 @@ const handleOpenFilter = () => {
 
 <template>
   <div class="flex flex-col gap-2">
-    <Main />
-    <div v-if="showContent" class="flex gap-2">
+    <Main :side-open="sideVisible" :has-content="showContent" @toggle-side="sideVisible = !sideVisible" />
+    <div v-if="showContent && sideVisible" class="flex gap-2">
       <List 
         v-if="!showTaskList" 
         @select-project="handleProjectSelect"

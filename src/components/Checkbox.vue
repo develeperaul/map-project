@@ -22,7 +22,7 @@ const emit = defineEmits<{
 
 const sizeClasses = {
   sm: 'w-5 h-5',
-  md: 'w-6 h-6',
+  md: 'w-[18px] h-[18px]',
   lg: 'w-7 h-7',
 }
 
@@ -33,7 +33,7 @@ const checkboxClasses = computed(() => {
     return `${base} ${size} bg-base-00 border-border opacity-50 cursor-not-allowed`
   }
   if (props.modelValue) {
-    return `${base} ${size} bg-primary border-primary text-white`
+    return `${base} ${size}  text-white`
   }
   return `${base} ${size} bg-white border-border hover:bg-base-01`
 })
@@ -54,14 +54,14 @@ const handleClick = () => {
 </script>
 
 <template>
-  <div class="flex items-center gap-4 py-3" @click="handleClick">
+  <div class="flex items-center gap-4 py-2" @click="handleClick">
     <div :class="checkboxClasses">
       <BaseIcon
         v-if="modelValue"
         name="check"
-        class="w-4 h-4"
+        class="w-[18px] h-[18px]"
       />
     </div>
-    <span v-if="label" :class="labelClasses">{{ label }}</span>
+    <span v-if="label" class=" text-base" :class="labelClasses">{{ label }}</span>
   </div>
 </template>

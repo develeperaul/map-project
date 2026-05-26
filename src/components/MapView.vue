@@ -74,12 +74,16 @@ onBeforeUnmount(() => {
 })
 
 function onMarkerClick(marker: MarkerType) {
+  if (mapStore.selectedMarker?.id === marker.id) {
+    mapStore.clearSelection()
+  }
   mapStore.selectMarker(marker)
 }
 
 // При смене видимых маркеров двигаем карту к их границам.
 watch(() => mapStore.mapBounds, (bounds) => {
   if (mapStore.focusedProjectBounds) return
+  if (mapStore.selectedMarker) return
   mapStore.mapCenter = bounds.center
   mapStore.mapZoom = bounds.zoom
 }, { immediate: true, deep: true })

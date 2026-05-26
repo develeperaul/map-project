@@ -46,7 +46,7 @@ const showPrimarySheet = computed({
 })
 const showSearchField = computed(() => activeTab.value === '' && !sheetOpen.value)
 const bottomControlsStyle = computed(() => ({
-  bottom: sheetOpen.value ? `${listSheetHeight.value + 16}px` : '16px',
+  bottom: sheetOpen.value ? `${listSheetHeight.value + 8 }px` : '16px',
 }))
 
 const resetNestedSelection = () => {
@@ -216,20 +216,19 @@ const handleTaskSelect = (_task: Marker, index: number) => {
 const backToList = () => {
   showDescriptionOverlay.value = false
   descriptionReturnView.value = null
-  resetNestedSelection()
-  mapStore.clearSelection()
   sheetView.value = 'list'
 }
 
 const backToTasks = () => {
+  showDescriptionOverlay.value = false
+  descriptionReturnView.value = null
+
   if (selectedProject.value) {
-    showDescriptionOverlay.value = false
-    descriptionReturnView.value = null
     sheetView.value = 'tasks'
     return
   }
 
-  closeAll()
+  sheetView.value = 'list'
 }
 
 const closeDescription = () => {
@@ -247,8 +246,9 @@ const closeDescription = () => {
     return
   }
 
-  closeAll()
-  mapStore.clearSelection()
+  // Просто закрываем Description, оставляем карту и маркер как есть
+  showDescriptionOverlay.value = false
+  descriptionReturnView.value = null
 }
 
 const handleDescriptionTaskIndex = (index: number) => {
@@ -273,7 +273,7 @@ const handleSelectFromSearch = (marker: Marker) => {
   <div v-if="!showDescriptionOverlay" class="fixed inset-0 z-40 pointer-events-none">
     <div class="absolute inset-x-0 px-4 pointer-events-auto z-[60] transition-all duration-300 ease-out" :style="bottomControlsStyle">
       <div class="flex flex-col gap-2">
-        <Tabs v-model="activeTab" />
+        <Tabs v-model="activeTab" style="box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.30), 0 2px 6px 2px rgba(0, 0, 0, 0.15);" />
 
         <Search
           v-if="showSearchField && !showSearch"

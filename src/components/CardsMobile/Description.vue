@@ -35,7 +35,7 @@ const currentTask = computed(() => {
   return props.tasks[Math.min(props.taskIndex, props.tasks.length - 1)] || props.marker
 })
 
-const completedCount = computed(() => props.tasks.filter(task => task.status === 'completed').length)
+const completedCount = computed(() => props.tasks.filter(task => task.status === 100).length)
 const totalCount = computed(() => props.tasks.length)
 const currentImages = computed(() => {
   const ownImages = currentTask.value.images || []
@@ -51,8 +51,8 @@ const activeImageCaption = computed(() => (
 const distanceLabel = computed(() => currentTask.value.distance || props.marker.distance || '')
 const activeImageLocation = computed(() => activeGalleryImage.value?.city || currentTask.value.city || '')
 
-const isCompleted = computed(() => currentTask.value.status === 'completed')
-const isActive = computed(() => typeof currentTask.value.status === 'number')
+const isCompleted = computed(() => currentTask.value.status === 100)
+const isActive = computed(() => typeof currentTask.value.status === 'number' && currentTask.value.status < 100)
 
 const canGoPrev = computed(() => hasTasks.value && props.taskIndex > 0)
 const canGoNext = computed(() => hasTasks.value && props.taskIndex < props.tasks.length - 1)
@@ -225,16 +225,20 @@ onBeforeUnmount(() => {
 <template>
   <div
     data-mobile-description
-    class="fixed inset-0 z-[70] overflow-hidden bg-transparent pointer-events-auto overscroll-contain"
-    @touchstart.passive="handleTouchStart"
-    @touchend.passive="handleTouchEnd"
+    class="fixed inset-0 z-[70] overflow-hidden bg-transparent pointer-events-none overscroll-contain"
   >
-    <div class="absolute inset-x-0 bottom-0 flex max-h-[82vh] min-h-0 flex-col px-4 pb-6">
+    <div
+      class="absolute inset-x-0 bottom-0 flex max-h-[82vh] min-h-0 flex-col px-4 pb-6 pointer-events-auto"
+      @touchstart.passive="handleTouchStart"
+      @touchend.passive="handleTouchEnd"
+    >
       <Transition :name="transitionName" mode="out-in">
         <div
           v-if="galleryImages.length"
           :key="`gallery-${currentTask.id}`"
           class="mb-3 flex shrink-0 gap-2 overflow-x-auto pb-1"
+          @touchstart.stop
+          @touchend.stop
         >
           <button
             v-for="(image, index) in galleryImages"
@@ -257,7 +261,7 @@ onBeforeUnmount(() => {
       <div class="flex min-h-0 flex-col overflow-hidden rounded-card bg-white shadow-[0_4px_20px_rgba(20,20,20,0.12)]">
         <div class="flex items-start gap-4 p-4 pb-3">
           <button
-            v-if="project"
+            
             type="button"
             class="flex h-10 w-10 shrink-0 items-center justify-center rounded-button bg-base-light-00 text-text-dark transition-colors hover:bg-base-light-01"
             aria-label="Назад к задачам"
@@ -265,7 +269,7 @@ onBeforeUnmount(() => {
           >
             <BaseIcon name="caret-left" class="h-4 w-4" size="16px" />
           </button>
-          <span v-else class="h-10 w-10 shrink-0" aria-hidden="true"></span>
+          <!-- <span v-else class="h-10 w-10 shrink-0" aria-hidden="true"></span> -->
 
           <div class="min-w-0 flex-1 text-center">
             <!-- <h3 class="truncate text-sm font-medium leading-5 text-text-dark">

@@ -79,6 +79,7 @@ describe('Cards/List', () => {
       category: 'sport',
       date: '2026-04-01',
       city: 'Москва',
+      status: 100,
       images: [],
       sportTypes: ['Кросс-поход'],
       tags: [

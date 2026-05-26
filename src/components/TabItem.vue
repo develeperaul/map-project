@@ -27,7 +27,7 @@ const handleClick = () => {
     type="button"
     :disabled="props.disabled"
     :class="[
-      'flex transition-colors duration-200 flex-1 justify-center',
+      'flex transition-colors duration-200 flex-1 justify-center font-medium',
       iconPosition() === 'top' ? 'flex-col items-center gap-1' : 'items-center gap-2',
       iconPosition() === 'only' ? 'p-2' : 'px-2 py-3',
       'text-sm rounded-[6px]',

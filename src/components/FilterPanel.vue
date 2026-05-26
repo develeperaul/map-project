@@ -44,7 +44,7 @@ const handleSearch = (value: string) => {
 
 <template>
   <div class='bg-white rounded-card border border-border'>
-    <div class='p-4 flex flex-col gap-4'>
+    <div class='p-6 flex flex-col gap-4'>
       <Tabs v-model='activeCategory' variant='underline'>
         <TabItem 
           v-for='cat in categories' 
