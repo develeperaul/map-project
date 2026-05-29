@@ -129,3 +129,7 @@ html, body, #app {
   scrollbar-width: thin;
   scrollbar-color: var(--color-text-dark) var(--color-base-light-00);
 }
+
+.ymaps3--controls {
+  z-index: 0 !important;
+}

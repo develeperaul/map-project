@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useMapStore } from '../../stores/map'
 import type { Category, Marker } from '../../data/mock'
 import { resolveSelection } from '../Cards/selection'
@@ -19,7 +19,9 @@ const activeTab = ref<Category | ''>('')
 const sheetView = ref<SheetView | null>(null)
 const showDescriptionOverlay = ref(false)
 const showFilter = ref(false)
+const filterMode = ref<'full' | 'calendar'>('full')
 const showSearch = ref(false)
+const isMobileViewport = ref(false)
 const listSheetHeight = ref(0)
 const selectedProject = ref<Marker | null>(null)
 const selectedTaskIndex = ref(-1)
@@ -44,10 +46,17 @@ const showPrimarySheet = computed({
     if (!value) closeAll()
   },
 })
-const showSearchField = computed(() => activeTab.value === '' && !sheetOpen.value)
+const showSearchField = computed(() => activeTab.value === '' && !showFilter.value && !showDescriptionOverlay.value)
+const isAllDateResults = computed(() => activeTab.value === '' && mapStore.hasDateFilter)
 const bottomControlsStyle = computed(() => ({
   bottom: sheetOpen.value ? `${listSheetHeight.value + 8 }px` : '16px',
 }))
+
+const mobileQuery = '(max-width: 767px)'
+const updateIsMobileViewport = () => {
+  if (typeof window === 'undefined') return
+  isMobileViewport.value = window.matchMedia(mobileQuery).matches
+}
 
 const resetNestedSelection = () => {
   selectedProject.value = null
@@ -146,11 +155,13 @@ watch(activeTab, (val) => {
     mapStore.setCategory(val)
     sheetView.value = 'list'
     showFilter.value = false
+    filterMode.value = 'full'
     showSearch.value = false
   } else {
     mapStore.setCategory('all')
     sheetView.value = null
     showFilter.value = false
+    filterMode.value = 'full'
   }
 })
 
@@ -162,12 +173,29 @@ watch(() => mapStore.selectedMarker, (marker) => {
 
   if (!marker) return
   showFilter.value = false
+  filterMode.value = 'full'
   showSearch.value = false
   applyResolvedSelection(marker, false, null)
 })
 
+onMounted(() => {
+  updateIsMobileViewport()
+  if (typeof window === 'undefined') return
+  window.addEventListener('resize', updateIsMobileViewport)
+})
+
+onBeforeUnmount(() => {
+  if (typeof window === 'undefined') return
+  window.removeEventListener('resize', updateIsMobileViewport)
+})
+
 const openSearch = () => {
-  if (activeTab.value || sheetOpen.value) return
+  if (activeTab.value || showFilter.value || showDescriptionOverlay.value) return
+  showSearch.value = true
+}
+
+const openListSearch = () => {
+  if (showFilter.value || showDescriptionOverlay.value) return
   showSearch.value = true
 }
 
@@ -176,22 +204,45 @@ const closeSearch = () => {
 }
 
 const openFilter = () => {
+  filterMode.value = 'full'
   viewBeforeFilter.value = sheetView.value
   sheetView.value = null
   showFilter.value = true
   showSearch.value = false
 }
 
+const openCalendarFilter = () => {
+  filterMode.value = 'calendar'
+  viewBeforeFilter.value = null
+  sheetView.value = null
+  showDescriptionOverlay.value = false
+  showFilter.value = true
+  showSearch.value = false
+}
+
+const handleClearDateFilter = () => {
+  mapStore.clearDateRange()
+  showFilter.value = false
+  filterMode.value = 'full'
+  viewBeforeFilter.value = null
+
+  if (activeTab.value === '') {
+    sheetView.value = null
+  }
+}
+
 const closeFilter = () => {
   showFilter.value = false
-  sheetView.value = viewBeforeFilter.value || (activeTab.value ? 'list' : null)
+  sheetView.value = viewBeforeFilter.value || (activeTab.value || mapStore.hasDateFilter ? 'list' : null)
   viewBeforeFilter.value = null
+  filterMode.value = 'full'
 }
 
 const closeAll = () => {
   sheetView.value = null
   showDescriptionOverlay.value = false
   showFilter.value = false
+  filterMode.value = 'full'
   showSearch.value = false
   viewBeforeFilter.value = null
   descriptionReturnView.value = null
@@ -246,9 +297,8 @@ const closeDescription = () => {
     return
   }
 
-  // Просто закрываем Description, оставляем карту и маркер как есть
-  showDescriptionOverlay.value = false
-  descriptionReturnView.value = null
+  closeAll()
+  mapStore.clearSelection()
 }
 
 const handleDescriptionTaskIndex = (index: number) => {
@@ -271,7 +321,7 @@ const handleSelectFromSearch = (marker: Marker) => {
 
 <template>
   <div v-if="!showDescriptionOverlay" class="fixed inset-0 z-40 pointer-events-none">
-    <div class="absolute inset-x-0 px-4 pointer-events-auto z-[60] transition-all duration-300 ease-out" :style="bottomControlsStyle">
+    <div class="absolute inset-x-0 px-4 pointer-events-auto z-[60] transition-all duration-300 ease-out " :style="bottomControlsStyle">
       <div class="flex flex-col gap-2">
         <Tabs v-model="activeTab" style="box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.30), 0 2px 6px 2px rgba(0, 0, 0, 0.15);" />
 
@@ -280,6 +330,8 @@ const handleSelectFromSearch = (marker: Marker) => {
           mode="inline"
           :query="mapStore.searchQuery"
           @open="openSearch"
+          @open-calendar-filter="openCalendarFilter"
+          @clear-date-filter="handleClearDateFilter"
         />
       </div>
     </div>
@@ -293,7 +345,9 @@ const handleSelectFromSearch = (marker: Marker) => {
   >
     <List
       v-if="sheetView === 'list'"
+      :minimal-controls="isAllDateResults"
       @close="closeAll"
+      @open-search="openListSearch"
       @open-filter="openFilter"
       @select="handleListSelect"
     />
@@ -309,7 +363,7 @@ const handleSelectFromSearch = (marker: Marker) => {
   </BottomSheet>
 
   <Description
-    v-if="showDescriptionOverlay && selectedDescriptionMarker"
+    v-if="isMobileViewport && showDescriptionOverlay && selectedDescriptionMarker"
     :marker="selectedDescriptionMarker"
     :project="selectedProject"
     :tasks="selectedProjectTasks"
@@ -325,7 +379,7 @@ const handleSelectFromSearch = (marker: Marker) => {
     max-height="calc(100vh - 136px)"
     @height-change="handleSheetHeight"
   >
-    <Filter embedded @close="closeFilter" />
+    <Filter embedded :mode="filterMode" @close="closeFilter" />
   </BottomSheet>
 
   <Search

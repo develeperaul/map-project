@@ -5,10 +5,17 @@ import { projectFixture, travelFixture } from '../../test/markers'
 
 const project = projectFixture
 const tasks = project.tasks!
+const longDescription = [
+  'Координация календаря соревнований, распределение игровых площадок и назначение ответственных лиц.',
+  'Ведение календаря матчей, фиксация результатов игр и сбор статистики команд.',
+  'Организация взаимодействия между командами, судейской бригадой и администрацией площадок.',
+  'Контроль соблюдения регламента соревнований и установленного расписания матчей.',
+  'Актуализация турнирных таблиц и оперативное обновление информации по итогам игр.',
+  'Подготовка сводных отчётов по результатам матчей и этапов соревнований.',
+].join('\n')
 
 const stubs = {
   BaseIcon: { template: '<span data-stub="icon" />' },
-  Chip: { template: '<span data-stub="chip">{{ label }}</span>', props: ['label'] },
   ImageWithLoader: {
     props: ['src', 'alt'],
     template: '<img :src="src" :alt="alt" data-stub="image-loader" />',
@@ -21,8 +28,9 @@ afterEach(() => {
 })
 
 describe('CardsMobile/Description', () => {
-  it('renders as a fixed overlay card instead of bottom-sheet content', () => {
+  it('renders as a fixed popup card with a grabber', () => {
     const wrapper = mount(Description, {
+      attachTo: document.body,
       props: {
         marker: travelFixture,
       },
@@ -31,16 +39,21 @@ describe('CardsMobile/Description', () => {
       },
     })
 
-    const root = wrapper.get('[data-mobile-description]')
-    expect(root.classes()).toContain('fixed')
-    expect(root.classes()).toContain('inset-0')
-    expect(root.classes()).toContain('bg-transparent')
-    expect(wrapper.text()).toContain(travelFixture.title)
-    expect(wrapper.text()).toContain(travelFixture.distance)
+    const root = document.body.querySelector('[data-mobile-description]')
+    expect(root).toBeTruthy()
+    expect(root?.className).toContain('fixed')
+    expect(root?.className).toContain('inset-0')
+    expect(root?.className).toContain('pointer-events-none')
+    expect(document.body.querySelector('.cursor-grab')).toBeTruthy()
+    expect(document.body.textContent).toContain(travelFixture.title)
+    expect(document.body.textContent).toContain(travelFixture.distance)
+
+    wrapper.unmount()
   })
 
-  it('renders task slider state and emits close/back separately', async () => {
+  it('renders task header, status pagination and emits close/back separately', async () => {
     const wrapper = mount(Description, {
+      attachTo: document.body,
       props: {
         marker: tasks[1],
         project,
@@ -52,20 +65,27 @@ describe('CardsMobile/Description', () => {
       },
     })
 
-    expect(wrapper.text()).toContain(project.title)
-    expect(wrapper.text()).toContain('Выполнено')
-    expect(wrapper.text()).toContain(project.distance)
-    expect(wrapper.findAll('[data-slide-dot]')).toHaveLength(tasks.length)
+    expect(document.body.textContent).toContain(project.title)
+    expect(document.body.textContent).toContain('Выполнено 2/5')
+    expect(document.body.textContent).toContain(tasks[1].title)
+    expect(document.body.querySelectorAll('[data-task-dot]')).toHaveLength(tasks.length)
+    expect(document.body.querySelector('[data-task-dot="0"]')?.getAttribute('data-task-status')).toBe('completed')
+    expect(document.body.querySelector('[data-task-dot="1"]')?.getAttribute('data-task-status')).toBe('completed')
+    expect(document.body.querySelector('[data-task-dot="1"]')?.getAttribute('data-task-active')).toBe('true')
+    expect(document.body.querySelector('[data-task-dot="2"]')?.getAttribute('data-task-status')).toBe('in-progress')
 
-    await wrapper.find('button[aria-label="Назад к задачам"]').trigger('click')
-    await wrapper.find('button[aria-label="Закрыть описание"]').trigger('click')
+    await document.body.querySelector<HTMLButtonElement>('button[aria-label="Назад"]')?.click()
+    await document.body.querySelector<HTMLButtonElement>('button[aria-label="Закрыть описание"]')?.click()
 
     expect(wrapper.emitted('back')).toHaveLength(1)
     expect(wrapper.emitted('close')).toHaveLength(1)
+
+    wrapper.unmount()
   })
 
-  it('emits task index updates from dots and swipe', async () => {
+  it('closes on drag and updates task index from dots', async () => {
     const wrapper = mount(Description, {
+      attachTo: document.body,
       props: {
         marker: tasks[0],
         project,
@@ -77,16 +97,48 @@ describe('CardsMobile/Description', () => {
       },
     })
 
-    const root = wrapper.get('[data-mobile-description]')
+    const grabber = document.body.querySelector('.cursor-grab')
+    grabber?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, clientY: 0 }))
+    grabber?.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, clientY: 160 }))
+    grabber?.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, clientY: 160 }))
 
-    await wrapper.findAll('[data-slide-dot]')[2].trigger('click')
-    await root.trigger('touchstart', { touches: [{ clientX: 240 }] })
-    await root.trigger('touchend', { changedTouches: [{ clientX: 120 }] })
+    expect(wrapper.emitted('close')).toHaveLength(1)
 
-    expect(wrapper.emitted('update:taskIndex')).toEqual([[2], [1]])
+    await document.body.querySelector<HTMLButtonElement>('button[aria-label="Открыть задачу 3"]')?.click()
+    expect(wrapper.emitted('update:taskIndex')).toEqual([[2]])
+
+    wrapper.unmount()
   })
 
-  it('opens mobile fancybox from preview and switches images by swipe', async () => {
+  it('opens the full text popup from the inline link and closes it by drag', async () => {
+    const wrapper = mount(Description, {
+      attachTo: document.body,
+      props: {
+        marker: {
+          ...travelFixture,
+          description: longDescription,
+        },
+      },
+      global: {
+        stubs,
+      },
+    })
+
+    expect(document.body.textContent).toContain('Полный текст')
+
+    await document.body.querySelector<HTMLButtonElement>('button[aria-label="Полный текст"]')?.click()
+
+    expect(document.body.textContent).toContain('Описание')
+    expect(document.body.textContent).toContain('Закрыть')
+    expect(document.body.textContent).toContain('Актуализация турнирных таблиц')
+
+    await document.body.querySelector<HTMLButtonElement>('[role="dialog"][aria-label="Полный текст"] button')?.click()
+    expect(document.body.querySelector('[role="dialog"][aria-label="Полный текст"]')).toBeNull()
+
+    wrapper.unmount()
+  })
+
+  it('opens mobile gallery from preview and switches images by swipe', async () => {
     const wrapper = mount(Description, {
       attachTo: document.body,
       props: {
@@ -103,7 +155,7 @@ describe('CardsMobile/Description', () => {
       },
     })
 
-    await wrapper.findAll('button[aria-label^="Открыть изображение"]')[1].trigger('click')
+    await document.body.querySelectorAll<HTMLButtonElement>('button[aria-label^="Открыть изображение"]')[1]?.click()
 
     expect(document.body.textContent).toContain('2 из 2')
     expect(document.body.textContent).toContain('Второе фото')
@@ -121,6 +173,9 @@ describe('CardsMobile/Description', () => {
     await closeButton?.click()
 
     expect(document.body.textContent).not.toContain('1 из 2')
+    expect(document.body.style.overflow).toBe('hidden')
+
+    wrapper.unmount()
     expect(document.body.style.overflow).toBe('')
   })
 })

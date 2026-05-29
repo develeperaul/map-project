@@ -53,6 +53,7 @@ const formatDateForStore = (value: Date | null) => {
 
 const isSport = computed(() => mapStore.category === 'sport')
 const isCalendarMode = computed(() => props.mode === 'calendar')
+const calendarBounds = computed(() => mapStore.calendarDateBounds)
 
 const dateRange = ref<{ start: Date | null; end: Date | null }>({
   start: parseDateString(mapStore.dateRange.start),
@@ -159,7 +160,7 @@ const handleApply = () => {
 </script>
 
 <template>
-  <div :class="props.embedded ? 'flex h-full w-full flex-col bg-white' : 'w-[409px] bg-white rounded-card border border-border flex flex-col max-h-[calc(100vh-300px)] overflow-hidden'" style="box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.30), 0 2px 6px 2px rgba(0, 0, 0, 0.15);">
+  <div :class="props.embedded ? 'flex h-full w-full flex-col bg-white' : 'w-[409px] bg-white rounded-card border border-border flex flex-col max-h-[calc(100vh-300px)] overflow-hidden'" >
     <div :class="props.embedded ? 'mb-4 flex items-center justify-between px-4 pt-1' : 'flex items-center justify-between p-4'">
       <h3 class=" text-body-l lg:text-[20px] font-medium leading-7 text-text-00">Фильтр</h3>
       <button
@@ -176,7 +177,11 @@ const handleApply = () => {
 
     <div :class="props.embedded ? 'pt-4 flex-1 space-y-4 overflow-y-auto px-4 pb-4 ' : 'mt-6 min-h-0 flex-1 space-y-8 overflow-y-auto px-4 pb-4 pr-3'">
       <section>
-        <Calendar v-model="dateRange" />
+        <Calendar
+          v-model="dateRange"
+          :min-date="calendarBounds.minDate"
+          :max-date="calendarBounds.maxDate"
+        />
       </section>
       <template v-if="!isCalendarMode && isSport">
         <div class="h-[1px] bg-border" />

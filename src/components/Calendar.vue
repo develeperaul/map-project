@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import BaseIcon from './BaseIcon.vue'
+import CalendarPickerDropdown from './CalendarPickerDropdown.vue'
 
 interface Props {
   modelValue?: { start: Date | null; end: Date | null } | null
   mode?: 'single' | 'range'
   showActions?: boolean
+  minDate?: Date | null
+  maxDate?: Date | null
 }
 
 type RangeValue = { start: Date | null; end: Date | null }
@@ -25,6 +28,8 @@ const props = withDefaults(defineProps<Props>(), {
   modelValue: () => ({ start: null, end: null }),
   mode: 'range',
   showActions: false,
+  minDate: null,
+  maxDate: null,
 })
 
 const emit = defineEmits<{
@@ -49,16 +54,39 @@ const monthNames = [
   'Декабрь',
 ]
 
-const initialDate = props.modelValue?.start ?? new Date()
+const defaultMinDate = new Date(2020, 0, 1)
+const startOfDay = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate())
+const startOfMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth(), 1)
+const endOfMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth() + 1, 0)
 
-const currentDate = ref(new Date(initialDate.getFullYear(), initialDate.getMonth(), 1))
+const effectiveMinDate = computed(() => startOfDay(props.minDate ?? defaultMinDate))
+const effectiveMaxDate = computed(() => startOfDay(props.maxDate ?? new Date()))
+const clampedMaxDate = computed(() => {
+  const today = startOfDay(new Date())
+  return effectiveMaxDate.value < today ? effectiveMaxDate.value : today
+})
+
+const clampDate = (date: Date) => {
+  const normalized = startOfDay(date)
+  if (effectiveMinDate.value > clampedMaxDate.value) {
+    return clampedMaxDate.value
+  }
+
+  if (normalized < effectiveMinDate.value) return effectiveMinDate.value
+  if (normalized > clampedMaxDate.value) return clampedMaxDate.value
+  return normalized
+}
+
+const currentDate = ref(startOfMonth(clampDate(props.modelValue?.start ?? new Date())))
 const hoverDate = ref<Date | null>(null)
+const activePicker = ref<'month' | 'year' | null>(null)
 const tempRange = ref<RangeValue>({
   start: props.modelValue?.start ?? null,
   end: props.modelValue?.end ?? null,
 })
 
-watch(() => props.modelValue, (value) => {
+const syncStateFromProps = () => {
+  const value = props.modelValue
   tempRange.value = {
     start: value?.start ?? null,
     end: value?.end ?? null,
@@ -66,21 +94,55 @@ watch(() => props.modelValue, (value) => {
   hoverDate.value = null
 
   const nextDate = value?.start ?? new Date()
-  currentDate.value = new Date(nextDate.getFullYear(), nextDate.getMonth(), 1)
-})
+  currentDate.value = startOfMonth(clampDate(nextDate))
+}
+
+watch(() => props.modelValue, syncStateFromProps, { deep: true, immediate: true })
+watch(() => [props.minDate, props.maxDate], syncStateFromProps, { immediate: true })
 
 const currentYear = computed(() => currentDate.value.getFullYear())
 const currentMonth = computed(() => currentDate.value.getMonth())
 const currentMonthName = computed(() => monthNames[currentMonth.value])
+const monthPickerOpen = computed({
+  get: () => activePicker.value === 'month',
+  set: (value: boolean) => {
+    activePicker.value = value ? 'month' : null
+  },
+})
+const yearPickerOpen = computed({
+  get: () => activePicker.value === 'year',
+  set: (value: boolean) => {
+    activePicker.value = value ? 'year' : null
+  },
+})
+const monthOptions = computed(() => monthNames.map((month, index) => ({
+  label: month,
+  selected: index === currentMonth.value,
+  value: index,
+})))
+const yearOptions = computed(() => {
+  const minYear = effectiveMinDate.value.getFullYear()
+  const maxYear = clampedMaxDate.value.getFullYear()
+  const years: number[] = []
+
+  for (let year = minYear; year <= maxYear; year += 1) {
+    years.push(year)
+  }
+  return (years.length ? years : [currentYear.value]).map(year => ({
+    label: String(year),
+    selected: year === currentYear.value,
+    value: year,
+  }))
+})
 
 const canGoPrevMonth = computed(() => {
-  const prevMonth = new Date(currentYear.value, currentMonth.value - 1, 1)
-  return prevMonth >= new Date(2020, 0, 1)
+  const prevMonth = startOfMonth(new Date(currentYear.value, currentMonth.value - 1, 1))
+  return endOfMonth(prevMonth) >= effectiveMinDate.value && prevMonth <= clampedMaxDate.value
 })
 
 const canGoNextMonth = computed(() => {
-  const nextMonth = new Date(currentYear.value, currentMonth.value + 1, 1)
-  return nextMonth <= new Date(2030, 11, 1)
+  const nextMonth = startOfMonth(new Date(currentYear.value, currentMonth.value + 1, 1))
+  return nextMonth <= clampedMaxDate.value && endOfMonth(nextMonth) >= effectiveMinDate.value
 })
 
 const formatDate = (date: Date) =>
@@ -183,7 +245,10 @@ const calendarWeeks = computed<CalendarWeek[]>(() => {
 const isSameDay = (left: Date | null, right: Date | null) =>
   !!left && !!right && left.toDateString() === right.toDateString()
 
-const isDisabled = (day: CalendarDay) => day.isOtherMonth
+const isDisabled = (day: CalendarDay) =>
+  day.isOtherMonth
+  || day.date < effectiveMinDate.value
+  || day.date > clampedMaxDate.value
 
 const isSelected = (date: Date) =>
   isSameDay(activeRange.value.start, date) || isSameDay(activeRange.value.end, date)
@@ -206,6 +271,16 @@ const prevMonth = () => {
 const nextMonth = () => {
   if (!canGoNextMonth.value) return
   currentDate.value = new Date(currentYear.value, currentMonth.value + 1, 1)
+}
+
+const selectMonth = (monthIndex: number) => {
+  currentDate.value = startOfMonth(clampDate(new Date(currentYear.value, monthIndex, 1)))
+  activePicker.value = null
+}
+
+const selectYear = (year: number) => {
+  currentDate.value = startOfMonth(clampDate(new Date(year, currentMonth.value, 1)))
+  activePicker.value = null
 }
 
 const selectDate = (day: CalendarDay) => {
@@ -261,15 +336,27 @@ const handleReset = () => {
       </div>
     </div>
 
-    <div class="mt-2 flex items-center justify-between">
-      <button type="button" class="text-sm font-medium leading-5 text-primary underline underline-offset-2">
-        {{ currentMonthName }} {{ currentYear }}
-      </button>
+    <div class="relative mt-2 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <CalendarPickerDropdown
+          v-model:open="monthPickerOpen"
+          :label="currentMonthName"
+          :options="monthOptions"
+          @select="selectMonth"
+        />
+
+        <CalendarPickerDropdown
+          v-model:open="yearPickerOpen"
+          :label="String(currentYear)"
+          :options="yearOptions"
+          @select="selectYear"
+        />
+      </div>
 
       <div class="flex items-center gap-2">
         <button
           type="button"
-          class="flex h-10 w-10 items-center justify-center rounded-[10px] bg-base-00 text-text-00 transition-colors hover:bg-base-01 disabled:cursor-not-allowed disabled:opacity-50"
+          class="cursor-pointer flex h-10 w-10 items-center justify-center rounded-[10px] bg-base-00 text-text-00 transition-colors hover:bg-base-01 disabled:cursor-not-allowed disabled:opacity-50"
           :disabled="!canGoPrevMonth"
           aria-label="Предыдущий месяц"
           @click="prevMonth"
@@ -278,7 +365,7 @@ const handleReset = () => {
         </button>
         <button
           type="button"
-          class="flex h-10 w-10 items-center justify-center rounded-[10px] bg-base-00 text-text-00 transition-colors hover:bg-base-01 disabled:cursor-not-allowed disabled:opacity-50"
+          class="cursor-pointer flex h-10 w-10 items-center justify-center rounded-[10px] bg-base-00 text-text-00 transition-colors hover:bg-base-01 disabled:cursor-not-allowed disabled:opacity-50"
           :disabled="!canGoNextMonth"
           aria-label="Следующий месяц"
           @click="nextMonth"
@@ -312,15 +399,15 @@ const handleReset = () => {
         >
           <div
             v-if="isInRange(day.date)"
-            class="absolute inset-y-1 left-0 right-0 bg-base-00"
+            class="absolute inset-y-1 left-0 right-0 bg-base-00 "
           />
           <div
             v-if="isRangeStart(day.date) && !isRangeEnd(day.date)"
-            class="absolute inset-y-1 left-1/2 right-0 bg-base-00"
+            class="absolute inset-y-1 left-1/2 right-0 bg-base-00 "
           />
           <div
             v-if="isRangeEnd(day.date) && !isRangeStart(day.date)"
-            class="absolute inset-y-1 left-0 right-1/2 bg-base-00"
+            class="absolute inset-y-1 left-0 right-1/2 bg-base-00 "
           />
 
           <button
@@ -359,3 +446,16 @@ const handleReset = () => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.dropdown-fade-enter-active,
+.dropdown-fade-leave-active {
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.dropdown-fade-enter-from,
+.dropdown-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+</style>

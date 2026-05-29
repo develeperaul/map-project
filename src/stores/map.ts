@@ -87,6 +87,10 @@ function parseDate(dateStr: string): Date | null {
   return new Date(year, month - 1, day)
 }
 
+function stripTime(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate())
+}
+
 function formatDateRangePart(dateStr: string | null): string {
   if (!dateStr) return '...'
 
@@ -102,6 +106,59 @@ function formatDateRangePart(dateStr: string | null): string {
 
 function normalizeFilterText(value: string) {
   return value.trim().toLowerCase()
+}
+
+function applyNonSearchFilters(
+  source: Marker[],
+  filters: {
+    dateRange: { start: string | null; end: string | null }
+    cityFilter: string[]
+    sportTypeFilter: string[]
+    tagFilter: string[]
+    category: Category | 'all'
+  },
+) {
+  let result = [...source]
+
+  if (filters.dateRange.start || filters.dateRange.end) {
+    result = result.filter(m => {
+      const markerDate = parseDate(m.date)
+      if (!markerDate) return true
+
+      if (filters.dateRange.start) {
+        const start = parseDate(filters.dateRange.start)
+        if (start && markerDate < start) return false
+      }
+
+      if (filters.dateRange.end) {
+        const end = parseDate(filters.dateRange.end)
+        if (end && markerDate > end) return false
+      }
+
+      return true
+    })
+  }
+
+  if (filters.cityFilter.length > 0) {
+    result = result.filter(m => filters.cityFilter.includes(m.city))
+  }
+
+  if (filters.category === 'sport' && filters.sportTypeFilter.length > 0) {
+    result = result.filter(m => {
+      const markerSportTypes = m.sportTypes || []
+      return filters.sportTypeFilter.some(s => markerSportTypes.includes(s))
+    })
+  }
+
+  if (filters.category === 'sport' && filters.tagFilter.length > 0) {
+    const selectedTags = new Set(filters.tagFilter.map(normalizeFilterText))
+    result = result.filter(m => {
+      if (!m.tags) return false
+      return m.tags.some(t => selectedTags.has(normalizeFilterText(t.title)))
+    })
+  }
+
+  return result
 }
 
 function applyEventDetails(marker: Marker, id: string, details: EventElementDetails, distance: string): Marker {
@@ -213,6 +270,22 @@ export const useMapStore = defineStore('map', () => {
       .sort((left, right) => left.localeCompare(right, 'ru'))
   ))
 
+  const calendarDateBounds = computed(() => {
+    let min: Date | null = null
+    let max: Date | null = null
+
+    for (const marker of markers.value) {
+      const date = parseDate(marker.date)
+      if (!date) continue
+
+      const normalized = stripTime(date)
+      if (!min || normalized < min) min = normalized
+      if (!max || normalized > max) max = normalized
+    }
+
+    return { minDate: min, maxDate: max }
+  })
+
   const availableTags = computed(() => {
     const tagMap = new Map<string, Tag>()
 
@@ -238,45 +311,29 @@ export const useMapStore = defineStore('map', () => {
       result = result.filter(m => m.title.toLowerCase().includes(query))
     }
 
-    if (dateRange.value.start || dateRange.value.end) {
-      result = result.filter(m => {
-        const markerDate = parseDate(m.date)
-        if (!markerDate) return true
-
-        if (dateRange.value.start) {
-          const start = parseDate(dateRange.value.start)
-          if (start && markerDate < start) return false
-        }
-
-        if (dateRange.value.end) {
-          const end = parseDate(dateRange.value.end)
-          if (end && markerDate > end) return false
-        }
-
-        return true
-      })
-    }
-
-    if (cityFilter.value.length > 0) {
-      result = result.filter(m => cityFilter.value.includes(m.city))
-    }
-
-    if (category.value === 'sport' && sportTypeFilter.value.length > 0) {
-      result = result.filter(m => {
-        const markerSportTypes = m.sportTypes || []
-        return sportTypeFilter.value.some(s => markerSportTypes.includes(s))
-      })
-    }
-
-    if (category.value === 'sport' && tagFilter.value.length > 0) {
-      const selectedTags = new Set(tagFilter.value.map(normalizeFilterText))
-      result = result.filter(m => {
-        if (!m.tags) return false
-        return m.tags.some(t => selectedTags.has(normalizeFilterText(t.title)))
-      })
-    }
+    result = applyNonSearchFilters(result, {
+      dateRange: dateRange.value,
+      cityFilter: cityFilter.value,
+      sportTypeFilter: sportTypeFilter.value,
+      tagFilter: tagFilter.value,
+      category: category.value,
+    })
 
     return result
+  })
+
+  const filteredMarkersWithoutSearch = computed(() => {
+    const base = category.value === 'all'
+      ? [...allMarkers.value]
+      : [...markers.value]
+
+    return applyNonSearchFilters(base, {
+      dateRange: dateRange.value,
+      cityFilter: cityFilter.value,
+      sportTypeFilter: sportTypeFilter.value,
+      tagFilter: tagFilter.value,
+      category: category.value,
+    })
   })
 
   const hasDateFilter = computed(() => !!dateRange.value.start || !!dateRange.value.end)
@@ -519,6 +576,7 @@ export const useMapStore = defineStore('map', () => {
     markers,
     allMarkers,
     filteredMarkers,
+    filteredMarkersWithoutSearch,
     mapMarkers,
     searchQuery,
     statusFilter,
@@ -536,6 +594,7 @@ export const useMapStore = defineStore('map', () => {
     locations,
     sportTypes,
     availableTags,
+    calendarDateBounds,
     projectMarkers,
     isProjectsLoading,
     projectsError,

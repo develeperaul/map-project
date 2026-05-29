@@ -36,6 +36,7 @@ describe('Cards/Description', () => {
     expect(wrapper.text()).toContain('Далее')
     expect(wrapper.findAll('img').length).toBeGreaterThan(0)
     expect(wrapper.findAll('[data-slide-dot]').length).toBe(5)
+    expect(wrapper.find('[data-slide-dot]').attributes('data-task-status')).toBe('completed')
 
     const nextButton = wrapper.findAll('button').find((button) => button.text().includes('Далее'))
     await nextButton?.trigger('click')

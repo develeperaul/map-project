@@ -340,7 +340,7 @@ defineExpose({
             <div class="min-w-0 flex-1">
               <div class=" flex justify-between gap-2">
                 <h3 class="break-words text-body-xl font-medium leading-6 text-text-00">{{ marker.title }}</h3>
-                <span v-if="marker.distance" class=" text-text-01 px-2 py-0.5 text-body-s bg-base-00 group-hover:bg-white rounded-[4px]" >
+                <span v-if="marker.distance" class=" text-text-01 px-2 py-0.5 text-body-s bg-base-00 group-hover:bg-white rounded-[4px] h-fit" >
                   {{marker.distance}}
                 </span>
               </div>

@@ -30,6 +30,7 @@ let isDocumentLocked = false
 
 const marker = computed(() => mapStore.selectedMarker)
 const hasTasks = computed(() => props.tasks.length > 0)
+const isProjectTasks = computed(() => hasTasks.value && props.tasks.some(task => task.category === 'projects'))
 
 // Если есть задачи, показываем активную задачу, иначе сам маркер.
 const currentTask = computed(() => {
@@ -39,6 +40,17 @@ const currentTask = computed(() => {
 
 const completedCount = computed(() => props.tasks.filter(task => task.status === 100).length)
 const totalCount = computed(() => props.tasks.length)
+const getTaskPaginationStatus = (task: Marker) => {
+  if (task.status === 100) return 'completed'
+  if (typeof task.status === 'number' && task.status > 0) return 'in-progress'
+  return 'pending'
+}
+
+const getTaskProgressOffset = (task: Marker) => {
+  if (typeof task.status !== 'number') return 100
+  const progress = Math.max(0, Math.min(task.status, 100))
+  return 100 - progress
+}
 
 const monthNames = [
   'Январь',
@@ -274,14 +286,52 @@ onBeforeUnmount(() => {
           </Button>
         </div>
 
-        <div class="flex items-center gap-2">
+        <div v-if="isProjectTasks" class="flex items-center gap-2">
           <span
-            v-for="(_, idx) in tasks"
-            :key="idx"
+            v-for="(task, idx) in tasks"
+            :key="task.id"
             data-slide-dot
-            class="h-2 w-2 rounded-full"
-            :class="idx === taskIndex ? 'bg-text-00' : 'border border-text-01'"
-          ></span>
+            class="relative flex h-4 w-4 items-center justify-center"
+            :data-task-status="getTaskPaginationStatus(task)"
+            :data-task-active="idx === taskIndex"
+          >
+            <span
+              v-if="task.status === 100"
+              class="flex h-3 w-3 items-center justify-center rounded-full bg-secondary-dark text-white"
+            >
+              <svg class="h-2 w-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+              </svg>
+            </span>
+
+            <svg
+              v-else
+              width="14"
+              height="14"
+              viewBox="0 0 14 14"
+              class="rotate-[-90deg]"
+            >
+              <circle cx="7" cy="7" r="5.5" fill="none" stroke="#E5E7EB" stroke-width="2" />
+              <circle
+                cx="7"
+                cy="7"
+                r="5.5"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                pathLength="100"
+                stroke-dasharray="100"
+                :stroke-dashoffset="getTaskProgressOffset(task)"
+                class="text-primary"
+              />
+            </svg>
+
+            <span
+              v-if="idx === taskIndex"
+              class="absolute left-1/2 -bottom-[3px] h-[3px] w-[3px] -translate-x-1/2 rounded-full bg-text-00"
+            />
+          </span>
         </div>
       </div>
     </div>
@@ -299,7 +349,7 @@ onBeforeUnmount(() => {
       >
         <button
           type="button"
-          class="absolute right-12 top-12 flex h-12 w-12 items-center justify-center rounded-button bg-base-light-00 text-text-dark transition-colors hover:bg-base-light-01"
+          class="absolute right-12 top-12 flex h-12 w-12 items-center justify-center rounded-button bg-base-light-00 text-text-dark transition-colors hover:bg-base-light-01 "
           aria-label="Закрыть просмотр"
           @click.stop="closeGallery"
         >
@@ -309,7 +359,7 @@ onBeforeUnmount(() => {
         <button
           v-if="galleryImages.length > 1"
           type="button"
-          class="absolute left-12 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-button bg-base-light-00 text-text-dark transition-colors hover:bg-base-light-01"
+          class="absolute left-12 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-button bg-base-light-00 text-text-dark transition-colors hover:bg-base-light-01 "
           aria-label="Предыдущее изображение"
           @click.stop="goGalleryPrev"
         >
@@ -346,7 +396,7 @@ onBeforeUnmount(() => {
         <button
           v-if="galleryImages.length > 1"
           type="button"
-          class="absolute right-12 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-button bg-base-light-00 text-text-dark transition-colors hover:bg-base-light-01"
+          class="absolute right-12 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-button bg-base-light-00 text-text-dark transition-colors hover:bg-base-light-01 "
           aria-label="Следующее изображение"
           @click.stop="goGalleryNext"
         >

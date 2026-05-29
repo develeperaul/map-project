@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { Marker } from '../../data/mock'
 import BaseIcon from '../BaseIcon.vue'
+import FullTextPopup from './FullTextPopup.vue'
 import ImageWithLoader from '../ImageWithLoader.vue'
 
 const props = withDefaults(defineProps<{
@@ -23,12 +24,17 @@ const emit = defineEmits<{
 
 const isExpanded = ref(false)
 const touchStartX = ref<number | null>(null)
+const dragStartY = ref<number | null>(null)
+const dragDeltaY = ref(0)
+const isDragging = ref(false)
 const galleryTouchStartX = ref<number | null>(null)
 const isGalleryOpen = ref(false)
 const activeGalleryIndex = ref(0)
 const transitionName = ref('task-forward')
+const fullTextPopupRef = ref<{ open: () => void; close: () => void } | null>(null)
 let previousBodyOverflow = ''
 let isDocumentLocked = false
+
 const hasTasks = computed(() => props.tasks.length > 0)
 const currentTask = computed(() => {
   if (!hasTasks.value) return props.marker
@@ -37,6 +43,17 @@ const currentTask = computed(() => {
 
 const completedCount = computed(() => props.tasks.filter(task => task.status === 100).length)
 const totalCount = computed(() => props.tasks.length)
+const getTaskPaginationStatus = (task: Marker) => {
+  if (task.status === 100) return 'completed'
+  if (typeof task.status === 'number' && task.status > 0) return 'in-progress'
+  return 'pending'
+}
+
+const getTaskProgressOffset = (task: Marker) => {
+  if (typeof task.status !== 'number') return 100
+  const progress = Math.max(0, Math.min(task.status, 100))
+  return 100 - progress
+}
 const currentImages = computed(() => {
   const ownImages = currentTask.value.images || []
   const fallbackImages = props.project?.images || []
@@ -48,11 +65,12 @@ const galleryCounter = computed(() => `${activeGalleryIndex.value + 1} из ${ga
 const activeImageCaption = computed(() => (
   activeGalleryImage.value?.description || currentTask.value.title || 'Описание фотографии'
 ))
-const distanceLabel = computed(() => currentTask.value.distance || props.marker.distance || '')
-const activeImageLocation = computed(() => activeGalleryImage.value?.city || currentTask.value.city || '')
+const distanceLabel = computed(() => currentTask.value.distance || props.project?.distance || props.marker.distance || '')
+const activeImageLocation = computed(() => activeGalleryImage.value?.city || props.project?.city || currentTask.value.city || '')
 
 const isCompleted = computed(() => currentTask.value.status === 100)
 const isActive = computed(() => typeof currentTask.value.status === 'number' && currentTask.value.status < 100)
+const isProjectTask = computed(() => currentTask.value.category === 'projects')
 
 const canGoPrev = computed(() => hasTasks.value && props.taskIndex > 0)
 const canGoNext = computed(() => hasTasks.value && props.taskIndex < props.tasks.length - 1)
@@ -82,7 +100,23 @@ const displayedDescription = computed(() => {
   if (isExpanded.value || text.length <= 120) return text
   return `${text.slice(0, 120).trimEnd()}...`
 })
-const canExpandDescription = computed(() => currentTask.value.description.length > 120)
+
+const canExpandDescription = computed(() => (currentTask.value.description || '').length > 120)
+const fullTextParagraphs = computed(() => {
+  const raw = (currentTask.value.description || '').trim()
+  if (!raw) return []
+  const paragraphs = raw
+    .split(/\n+/)
+    .map(part => part.trim())
+    .filter(Boolean)
+
+  return paragraphs.length > 0 ? paragraphs : [raw]
+})
+
+const sheetStyle = computed(() => ({
+  transform: isDragging.value ? `translateY(${dragDeltaY.value}px)` : 'translateY(0px)',
+  transition: isDragging.value ? 'none' : 'transform 220ms ease',
+}))
 
 const setTaskIndex = (value: number) => {
   if (!hasTasks.value) return
@@ -98,6 +132,15 @@ const goPrev = () => {
 
 const goNext = () => {
   if (canGoNext.value) setTaskIndex(props.taskIndex + 1)
+}
+
+const handleClose = () => {
+  emit('close')
+}
+
+const openFullTextPopup = () => {
+  if (!canExpandDescription.value) return
+  fullTextPopupRef.value?.open()
 }
 
 const openGallery = (index: number) => {
@@ -138,6 +181,34 @@ const handleTouchEnd = (event: TouchEvent) => {
     return
   }
   goPrev()
+}
+
+const handleDragStart = (event: TouchEvent | MouseEvent) => {
+  isDragging.value = true
+  dragStartY.value = 'touches' in event ? event.touches[0]?.clientY ?? null : event.clientY
+}
+
+const handleDragMove = (event: TouchEvent | MouseEvent) => {
+  if (!isDragging.value || dragStartY.value === null) return
+
+  const clientY = 'touches' in event ? event.touches[0]?.clientY ?? dragStartY.value : event.clientY
+  const deltaY = clientY - dragStartY.value
+
+  if (deltaY > 0) {
+    dragDeltaY.value = deltaY
+  }
+}
+
+const handleDragEnd = () => {
+  if (!isDragging.value) return
+
+  if (dragDeltaY.value > 100) {
+    handleClose()
+  }
+
+  isDragging.value = false
+  dragStartY.value = null
+  dragDeltaY.value = 0
 }
 
 const handleGalleryTouchStart = (event: TouchEvent) => {
@@ -196,15 +267,18 @@ watch(() => props.taskIndex, (value, oldValue) => {
   transitionName.value = value >= oldValue ? 'task-forward' : 'task-back'
   isExpanded.value = false
   closeGallery()
+  fullTextPopupRef.value?.close()
 })
 
 watch(isGalleryOpen, (isOpen) => {
+  if (typeof document === 'undefined') return
+
   if (isOpen) {
-    lockDocumentScroll()
+    document.addEventListener('keydown', handleGalleryKeydown)
     return
   }
 
-  unlockDocumentScroll()
+  document.removeEventListener('keydown', handleGalleryKeydown)
 })
 
 watch(galleryImages, (images) => {
@@ -217,150 +291,233 @@ watch(galleryImages, (images) => {
   }
 })
 
+onMounted(() => {
+  lockDocumentScroll()
+})
+
 onBeforeUnmount(() => {
   unlockDocumentScroll()
+  if (typeof document === 'undefined') return
+  document.removeEventListener('keydown', handleGalleryKeydown)
 })
 </script>
 
 <template>
-  <div
-    data-mobile-description
-    class="fixed inset-0 z-[70] overflow-hidden bg-transparent pointer-events-none overscroll-contain"
-  >
+  <Teleport to="body">
     <div
-      class="absolute inset-x-0 bottom-0 flex max-h-[82vh] min-h-0 flex-col px-4 pb-6 pointer-events-auto"
-      @touchstart.passive="handleTouchStart"
-      @touchend.passive="handleTouchEnd"
+      v-if="currentTask"
+      data-mobile-description
+      class="fixed inset-0 z-[70] overflow-hidden bg-transparent pointer-events-none overscroll-contain"
     >
-      <Transition :name="transitionName" mode="out-in">
+      <div
+        class="absolute inset-x-0 bottom-0 flex h-full min-h-0 flex-col justify-end px-4 pb-6 pointer-events-auto "
+        @touchstart.passive="handleTouchStart"
+        @touchend.passive="handleTouchEnd"
+      >
+        <Transition :name="transitionName" mode="out-in">
+          <div
+            v-if="galleryImages.length"
+            :key="`gallery-${currentTask.id}`"
+            class="mb-3 flex shrink-0 gap-2 overflow-x-auto pb-1"
+            @touchstart.stop
+            @touchend.stop
+          >
+            <button
+              v-for="(image, index) in galleryImages"
+              :key="`${image.url}-${index}`"
+              type="button"
+              class="h-20 w-[142px] shrink-0 overflow-hidden rounded-lg text-left shadow-[0px_1px_2px_0px_rgba(0,0,0,0.3),0px_2px_6px_2px_rgba(0,0,0,0.15)]"
+              :aria-label="`Открыть изображение ${index + 1}`"
+              @click="openGallery(index)"
+            >
+              <ImageWithLoader
+                :src="image.url"
+                :alt="image.description || currentTask.title"
+                wrapper-class="h-full w-full rounded-lg"
+                img-class="h-full w-full rounded-lg object-cover"
+              />
+            </button>
+          </div>
+        </Transition>
+
         <div
-          v-if="galleryImages.length"
-          :key="`gallery-${currentTask.id}`"
-          class="mb-3 flex shrink-0 gap-2 overflow-x-auto pb-1"
-          @touchstart.stop
-          @touchend.stop
+          class="flex max-h-[82vh] min-h-0 flex-col overflow-hidden rounded-[24px] bg-white pb-6 pt-3 shadow-[0px_1px_2px_0px_rgba(0,0,0,0.3),0px_2px_6px_2px_rgba(0,0,0,0.15)]"
+          :style="sheetStyle"
         >
-          <button
-            v-for="(image, index) in galleryImages"
-            :key="`${image.url}-${index}`"
-            type="button"
-            class="h-24 w-[148px] shrink-0 overflow-hidden rounded-lg text-left"
-            :aria-label="`Открыть изображение ${index + 1}`"
-            @click="openGallery(index)"
+          <div
+            class="flex justify-center py-2 cursor-grab active:cursor-grabbing select-none touch-none"
+            @mousedown="handleDragStart"
+            @mousemove="handleDragMove"
+            @mouseup="handleDragEnd"
+            @mouseleave="handleDragEnd"
+            @touchstart.prevent="handleDragStart"
+            @touchmove.prevent="handleDragMove"
+            @touchend="handleDragEnd"
           >
-            <ImageWithLoader
-              :src="image.url"
-              :alt="image.description || currentTask.title"
-              wrapper-class="h-full w-full rounded-lg"
-              img-class="h-full w-full rounded-lg object-cover"
-            />
-          </button>
-        </div>
-      </Transition>
-
-      <div class="flex min-h-0 flex-col overflow-hidden rounded-card bg-white shadow-[0_4px_20px_rgba(20,20,20,0.12)]">
-        <div class="flex items-start gap-4 p-4 pb-3">
-          <button
-            
-            type="button"
-            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-button bg-base-light-00 text-text-dark transition-colors hover:bg-base-light-01"
-            aria-label="Назад к задачам"
-            @click="emit('back')"
-          >
-            <BaseIcon name="caret-left" class="h-4 w-4" size="16px" />
-          </button>
-          <!-- <span v-else class="h-10 w-10 shrink-0" aria-hidden="true"></span> -->
-
-          <div class="min-w-0 flex-1 text-center">
-            <!-- <h3 class="truncate text-sm font-medium leading-5 text-text-dark">
-              {{ project?.title || currentTask.title }}
-            </h3> -->
-            <p v-if="hasTasks" class="mt-0.5 text-xs font-normal leading-4 text-text-01">
-              Выполнено {{ completedCount }}/{{ totalCount }}
-            </p>
+            <div class="h-1 w-10 rounded-full bg-base-01" />
           </div>
 
-          <button
-            type="button"
-            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-button bg-base-light-00 text-text-dark transition-colors hover:bg-base-light-01"
-            aria-label="Закрыть описание"
-            @click="emit('close')"
-          >
-            <BaseIcon name="close" class="h-4 w-4" size="16px" />
-          </button>
-        </div>
+          <div class="flex items-start gap-4 px-4 pb-3">
+            <button
+              type="button"
+              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-button bg-base-00 text-text-00 transition-colors"
+              aria-label="Назад"
+              @click="emit('back')"
+            >
+              <BaseIcon name="caret-left" class="h-4 w-4" size="16px" />
+            </button>
 
-        <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-5">
-          <Transition :name="transitionName" mode="out-in">
-            <div :key="currentTask.id" class="min-h-[190px]">
-              <div class="flex items-start gap-3">
-                <div v-if="currentTask.category === 'projects'" class="mt-1 shrink-0">
-                  <span
-                    v-if="isCompleted"
-                    class="flex h-4 w-4 items-center justify-center rounded-full bg-secondary-dark text-white"
-                  >
-                    <BaseIcon name="check" class="h-2.5 w-2.5" size="10px" />
-                  </span>
+            <div class="min-w-0 flex-1 text-center">
+              <h3 v-if="hasTasks" class="truncate text-sm font-medium leading-5 text-text-00">
+                {{ props.project?.title || currentTask.title }}
+              </h3>
+              <p v-if="hasTasks" class="mt-0.5 text-xs font-normal leading-4 text-text-01">
+                Выполнено {{ completedCount }}/{{ totalCount }}
+              </p>
+            </div>
 
-                  <span v-else-if="isActive" class="block h-4 w-4 rounded-full border-2 border-primary bg-white"></span>
-                </div>
+            <button
+              type="button"
+              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-button bg-base-00 text-text-00 transition-colors"
+              aria-label="Закрыть описание"
+              @click="handleClose"
+            >
+              <BaseIcon name="close" class="h-4 w-4" size="16px" />
+            </button>
+          </div>
 
-                <div class="min-w-0 flex-1">
-                  <h4 class="text-lg font-medium leading-6 text-text-dark">{{ currentTask.title }}</h4>
-                  <div v-if="currentTask.city || distanceLabel" class="mt-1 flex items-center gap-2 text-xs leading-4 text-text-01">
-                    <svg class="h-4 w-4 shrink-0 text-text-01" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 21s6-4.35 6-10a6 6 0 10-12 0c0 5.65 6 10 6 10z" />
-                      <circle cx="12" cy="11" r="2.5" stroke-width="2" />
-                    </svg>
-                    <span v-if="currentTask.city" class="truncate">{{ currentTask.city }}</span>
-                    <span v-if="currentTask.city && distanceLabel">•</span>
-                    <span v-if="distanceLabel" class="truncate">{{ distanceLabel }}</span>
+          <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4">
+            <Transition :name="transitionName" mode="out-in">
+              <div :key="currentTask.id" >
+                <div class="flex items-start gap-3">
+                  <div class="mt-[7px] shrink-0">
+                    <span
+                      v-if="isProjectTask && isCompleted"
+                      class="flex h-4 w-4 items-center justify-center rounded-full bg-secondary-dark text-white"
+                    >
+                      <svg class="h-2 w-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </span>
+                    <svg v-else-if="isProjectTask && isActive" width="14" height="14" viewBox="0 0 14 14" class="rotate-[-90deg]">
+                  <circle cx="7" cy="7" r="5.5" fill="none" stroke="#E5E7EB" stroke-width="2" />
+                  <circle
+                    cx="7"
+                    cy="7"
+                    r="5.5"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    pathLength="100"
+                    stroke-dasharray="100"
+                    :stroke-dashoffset="marker.status !== undefined ? 100 - marker.status : 100"
+                    class="text-primary"
+                  />
+                </svg>
+
+                    <span
+                      v-else
+                      class="block h-2.5 w-2.5 rounded-full"
+                      :class="currentTask.category === 'travel' ? 'bg-orange' : currentTask.category === 'sport' ? 'bg-purple' : 'bg-primary'"
+                    />
+                  </div>
+
+                  <div class="min-w-0 flex-1">
+                    <h4 class="text-lg font-medium leading-6 text-text-00">
+                      {{ currentTask.title }}
+                    </h4>
+                    <div v-if="currentTask.city || distanceLabel" class="mt-1 flex items-center gap-2 text-xs leading-4 text-text-01">
+                      <BaseIcon name="location" class="h-3 w-3 shrink-0 text-text-01" size="12px" />
+                      <span v-if="currentTask.city" class="truncate">{{ currentTask.city }}</span>
+                      <span v-if="currentTask.city && distanceLabel">•</span>
+                      <span v-if="distanceLabel" class="truncate">{{ distanceLabel }}</span>
+                    </div>
                   </div>
                 </div>
 
-                <span class="h-10 w-10 shrink-0" aria-hidden="true"></span>
+                <p v-if="displayedDescription" class="mt-4 text-sm font-normal leading-5 text-text-00">
+                  {{ displayedDescription }}
+                </p>
+
+                <div v-if="currentTask.date" class="mt-2 text-xs leading-4 text-text-02">
+                  {{ formatMonthYear(currentTask.date) }}
+                </div>
+
+                <button
+                  v-if="canExpandDescription"
+                  type="button"
+                  class="mt-3 inline-flex items-center gap-2 text-sm font-medium leading-5 text-primary underline decoration-solid underline-offset-2 transition-colors hover:text-primary-hover"
+                  aria-label="Полный текст"
+                  @click="openFullTextPopup"
+                >
+                  <span>Полный текст</span>
+                  <BaseIcon name="caret-down" class="h-5 w-5 text-primary" size="20px" />
+                </button>
               </div>
+            </Transition>
 
-              <p v-if="displayedDescription" class="mt-4 text-sm font-normal leading-5 text-text-dark">
-                {{ displayedDescription }}
-              </p>
-
-              <div v-if="currentTask.date" class="mt-2 text-xs leading-4 text-text-muted">
-                {{ formatMonthYear(currentTask.date) }}
-              </div>
-
+            <div v-if="hasTasks" class="mt-4 flex items-center justify-center gap-2" aria-label="Задачи проекта">
               <button
-                v-if="canExpandDescription"
+                v-for="(task, index) in tasks"
+                :key="index"
                 type="button"
-                class="mt-3 inline-flex items-center gap-2 text-sm font-medium leading-5 text-primary transition-colors hover:text-primary-hover"
-                @click="isExpanded = !isExpanded"
+                class="relative flex h-4 w-4 items-center justify-center"
+                :data-task-dot="index"
+                :data-task-status="getTaskPaginationStatus(task)"
+                :data-task-active="index === taskIndex"
+                :aria-label="`Открыть задачу ${index + 1}`"
+                :aria-current="index === taskIndex ? 'step' : undefined"
+                @click="setTaskIndex(index)"
               >
-                {{ isExpanded ? 'Скрыть текст' : 'Полный текст' }}
-                <svg class="h-4 w-4 transition-transform" :class="{ 'rotate-180': isExpanded }" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 9l6 6 6-6" />
+                <span
+                  v-if="task.status === 100"
+                  class="flex h-3 w-3 items-center justify-center rounded-full bg-secondary-dark text-white"
+                >
+                  <svg class="h-2 w-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                  </svg>
+                </span>
+
+                <svg
+                  v-else
+                  width="14"
+                  height="14"
+                  viewBox="0 0 14 14"
+                  class="rotate-[-90deg]"
+                >
+                  <circle cx="7" cy="7" r="5.5" fill="none" stroke="#E5E7EB" stroke-width="2" />
+                  <circle
+                    cx="7"
+                    cy="7"
+                    r="5.5"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    pathLength="100"
+                    stroke-dasharray="100"
+                    :stroke-dashoffset="getTaskProgressOffset(task)"
+                    class="text-primary"
+                  />
                 </svg>
+
+                <span
+                  v-if="index === taskIndex"
+                  class="absolute left-1/2 -bottom-[3px] h-[3px] w-[3px] -translate-x-1/2 rounded-full bg-text-00"
+                />
               </button>
             </div>
-          </Transition>
-
-          <div v-if="hasTasks" class="mt-4 flex items-center justify-center gap-2" aria-label="Задачи проекта">
-            <button
-              v-for="(_, index) in tasks"
-              :key="index"
-              type="button"
-              class="h-3 w-3 rounded-full border transition-colors"
-              :class="index === taskIndex ? 'border-secondary-dark bg-secondary-dark' : 'border-primary bg-white'"
-              :aria-label="`Открыть задачу ${index + 1}`"
-              :aria-current="index === taskIndex ? 'step' : undefined"
-              data-slide-dot
-              @click="setTaskIndex(index)"
-            ></button>
           </div>
-
         </div>
       </div>
     </div>
-  </div>
+  </Teleport>
+
+  <FullTextPopup
+    ref="fullTextPopupRef"
+    :paragraphs="fullTextParagraphs"
+  />
 
   <Teleport to="body">
     <Transition name="gallery-fade">
@@ -444,6 +601,16 @@ onBeforeUnmount(() => {
 
 .gallery-fade-enter-from,
 .gallery-fade-leave-to {
+  opacity: 0;
+}
+
+.popup-fade-enter-active,
+.popup-fade-leave-active {
+  transition: opacity 180ms ease;
+}
+
+.popup-fade-enter-from,
+.popup-fade-leave-to {
   opacity: 0;
 }
 </style>

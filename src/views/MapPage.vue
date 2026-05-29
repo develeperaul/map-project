@@ -25,7 +25,7 @@ onMounted(() => {
     <MapView />
     
     <!-- Desktop -->
-    <div class='absolute top-4 left-4 z-10 hidden md:block'>
+    <div class='absolute top-4 left-4 z-10 hidden md:block '>
       <CardsIndex />
     </div>
     

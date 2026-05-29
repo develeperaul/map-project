@@ -6,8 +6,15 @@ import BaseIcon from '../BaseIcon.vue'
 import EmptyState from '../EmptyState.vue'
 import EmptyStateFilter from '../EmptyStateFilter.vue'
 
+const props = withDefaults(defineProps<{
+  minimalControls?: boolean
+}>(), {
+  minimalControls: false,
+})
+
 const emit = defineEmits<{
   select: [marker: Marker]
+  'open-search': []
   'open-filter': []
   close: []
 }>()
@@ -39,7 +46,7 @@ const sportTypeIcons: Record<string, string> = {
   'Восхождение': 'sport-climb',
 }
 
-const markers = computed(() => mapStore.filteredMarkers)
+const markers = computed(() => mapStore.filteredMarkersWithoutSearch)
 const searchPlaceholder = computed(() => mapStore.category === 'projects' ? 'Поиск проектов...' : 'Поиск...')
 
 const statusChips = computed(() => {
@@ -55,7 +62,7 @@ const statusChips = computed(() => {
 })
 
 const displayedMarkers = computed(() => {
-  const markers = mapStore.filteredMarkers
+  const markers = mapStore.filteredMarkersWithoutSearch
 
   if (mapStore.category !== 'projects' || mapStore.statusFilter === 'all') {
     return markers
@@ -96,31 +103,9 @@ const getSportTypeIcon = (marker: Marker) => {
   return sportTypeIcons[sportType] || 'sport'
 }
 
-const getMetaText = (marker: Marker) => {
-  const year = formatYear(marker.date)
+const getProjectMetaText = (marker: Marker) => `Старт: ${formatYear(marker.date)} • Финиш: ${projectStatusText(marker.status)}`
 
-  if (marker.category === 'projects') {
-    const parts = [`Старт: ${year}`]
-
-    
-
-    parts.push(`Финиш: ${projectStatusText(marker.status)}`)
-
-    return parts.join(' • ')
-  }
-
-  const parts = []
-
-  if (marker.city) {
-    parts.push(`г. ${marker.city}`)
-  }
-
-  
-
-  parts.push(String(year))
-
-  return parts.join(' • ')
-}
+const getSportTagLabels = (marker: Marker) => marker.tags?.map(tag => tag.title) || []
 
 const handleClick = (marker: Marker) => {
   emit('select', marker)
@@ -171,25 +156,26 @@ const removeFilterChip = (chip: { type: string; value?: string }) => {
   }
 }
 
-const updateSearch = (event: Event) => {
-  mapStore.setSearchQuery((event.target as HTMLInputElement).value)
+const openSearch = () => {
+  emit('open-search')
 }
 </script>
 
 <template>
-  <div class="flex h-full flex-col bg-white px-4 pb-3" >
-    <div class="flex shrink-0 flex-col gap-2 pb-6">
+  <div class=" grid h-full  bg-white px-4 pb-3">
+    <div v-if="!props.minimalControls" class="flex shrink-0 flex-col gap-2 pb-5">
       <div class="flex items-start gap-2">
-        <label class="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-button bg-base-light-00 pl-4 pr-3 text-sm font-medium leading-5 text-text-01">
+        <button
+          type="button"
+          class="flex h-10 min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-button bg-base-light-00 pl-4 pr-3 text-left text-sm font-medium leading-5 text-text-01"
+          aria-label="Открыть поиск"
+          @click="openSearch"
+        >
           <BaseIcon name="search" class="h-4 w-4 shrink-0 text-text-01" size="16px" />
-          <input
-            :value="mapStore.searchQuery"
-            :placeholder="searchPlaceholder"
-            type="search"
-            class="min-w-0 flex-1 bg-transparent text-sm font-medium leading-5 text-text-dark outline-none placeholder:text-text-01"
-            @input="updateSearch"
-          >
-        </label>
+          <span class="min-w-0 flex-1 truncate text-sm font-medium leading-5 text-text-01">
+            {{ searchPlaceholder }}
+          </span>
+        </button>
 
         <button
           type="button"
@@ -249,66 +235,92 @@ const updateSearch = (event: Event) => {
       </div>
     </div>
 
-    <div class="flex-1 overflow-y-auto grid gap-2 pb-2">
-      
-      <div v-for="group in groupedMarkers" :key="group.year" class="flex flex-col gap-2">
-        <div class="flex items-center justify-between text-sm leading-5">
-          <span class="font-medium text-text-dark">{{ group.year }}</span>
-          <span class="font-normal text-text-muted">({{ group.items.length }})</span>
+    <div class="flex-1 overflow-y-auto overscroll-contain pb-2">
+      <div v-for="group in groupedMarkers" :key="group.year" class="pt-4 first:pt-0">
+        <div class="mb-3 flex items-baseline justify-between text-xs leading-5">
+          <span class="font-medium text-text-00">{{ group.year }}</span>
+          <span class="font-normal text-text-01">({{ group.items.length }})</span>
         </div>
 
-        <div class="flex flex-col">
+        <div class="divide-y divide-border">
           <button
             v-for="marker in group.items"
             :key="marker.id"
             type="button"
-            class="flex w-full cursor-pointer items-start gap-4 border-b border-border py-4 text-left transition-colors last:border-b-0 hover:bg-base-light-00"
+            class="flex w-full cursor-pointer items-start gap-4 py-4 text-left transition-colors hover:bg-base-light-00"
             :class="{ 'bg-base-light-00': isSelected(marker) }"
             @click="handleClick(marker)"
           >
-            <template v-if="marker.category === 'projects'">
-              <span
-                v-if="marker.status === 100"
-                class="mt-1 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-secondary-dark text-white"
-              >
-                <svg class="h-2 w-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+            <span class="mt-1 flex h-4 w-4 shrink-0 items-center justify-center">
+              <template v-if="marker.category === 'projects'">
+                <span
+                  v-if="marker.status === 100"
+                  class="flex h-4 w-4 items-center justify-center rounded-full bg-[#343A40] text-white"
+                >
+                  <svg class="h-2 w-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                  </svg>
+                </span>
+                <svg v-else width="14" height="14" viewBox="0 0 14 14" class="rotate-[-90deg]">
+                  <circle cx="7" cy="7" r="5.5" fill="none" stroke="#E5E7EB" stroke-width="2" />
+                  <circle
+                    cx="7"
+                    cy="7"
+                    r="5.5"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    pathLength="100"
+                    stroke-dasharray="100"
+                    :stroke-dashoffset="marker.status !== undefined ? 100 - marker.status : 100"
+                    class="text-primary"
+                  />
                 </svg>
-              </span>
-
-              <svg v-else width="14" height="14" viewBox="0 0 14 14" style="transform: rotate(-90deg);">
-                
-                <circle cx="7" cy="7" r="5.5" fill="none" stroke="#E5E7EB" stroke-width="2"/>
-                <circle cx="7" cy="7" r="5.5" fill="none" stroke="#3F51B5" stroke-width="2"
-                  stroke-linecap="round"
-                  pathLength="100"
-                  stroke-dasharray="100"
-                  :stroke-dashoffset="marker.status !== undefined ? 100 - marker.status : 100" /> 
-                        
-              </svg>
-            </template>
-
-            <span v-else class="mt-2 h-2.5 w-2.5 shrink-0 rounded-full" :class="categoryAccent[marker.category]"></span>
+              </template>
+              <span v-else class="h-2.5 w-2.5 rounded-full" :class="categoryAccent[marker.category]"></span>
+            </span>
 
             <div class="min-w-0 flex-1">
-              <div class=" flex justify-between gap-2">
-                <h3 class="break-words text-body-xl font-medium leading-6 text-text-00">{{ marker.title }}</h3>
-                <span v-if="marker.distance" class=" text-text-01 px-2 py-0.5 text-body-s bg-base-00 group-hover:bg-white rounded-[4px]" >
-                  {{marker.distance}}
+              <div class="flex items-start justify-between gap-2">
+                <h3 class="min-w-0 flex-1 truncate text-[18px] font-medium leading-6 text-text-00">
+                  {{ marker.title }}
+                </h3>
+
+                <span
+                  v-if="marker.distance"
+                  class="shrink-0 rounded-[4px] bg-base-00 px-2 py-0.5 text-xs leading-4 text-text-01"
+                >
+                  {{ marker.distance }}
                 </span>
               </div>
-              
-              <p class="mt-1 line-clamp-2 text-sm font-normal text-text-01">{{ marker.description }}</p>
-              <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-text-01">
-                <BaseIcon name="location" class="h-3 w-3 flex-shrink-0 text-text-01" />
-                <span>{{ getMetaText(marker) }}</span>
-                <template v-if="marker.category === 'sport' && getSportType(marker)">
-                  <span>•</span>
-                  <span class="inline-flex items-center gap-1">
-                    <BaseIcon :name="getSportTypeIcon(marker)" class="text-text-01" size="16px" />
+
+              <div
+                class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs leading-4 text-text-01"
+                :class="{ 'items-start': marker.category === 'projects' }"
+              >
+                <template v-if="marker.category === 'projects'">
+                  <span>{{ getProjectMetaText(marker) }}</span>
+                </template>
+                <template v-else>
+                  <BaseIcon name="location" class="h-3 w-3 shrink-0 text-text-01" />
+                  <span>{{ marker.city }}</span>
+                  <span v-if="marker.date">{{ formatYear(marker.date) }}</span>
+                  <span v-if="marker.category === 'sport' && getSportType(marker)" class="inline-flex items-center gap-1">
+                    <BaseIcon :name="getSportTypeIcon(marker)" class="text-text-01" size="14px" />
                     <span>{{ getSportType(marker) }}</span>
                   </span>
                 </template>
+              </div>
+
+              <div v-if="marker.category === 'sport' && getSportTagLabels(marker).length" class="mt-2 flex flex-wrap gap-1.5">
+                <span
+                  v-for="tag in getSportTagLabels(marker)"
+                  :key="tag"
+                  class="rounded-[4px] bg-base-00 px-2 py-1 text-xs leading-4 text-text-01"
+                >
+                  #{{ tag }}
+                </span>
               </div>
             </div>
           </button>
@@ -316,7 +328,7 @@ const updateSearch = (event: Event) => {
       </div>
 
       <EmptyStateFilter
-        v-if="displayedMarkers.length === 0 && mapStore.activeFilterCount > 0"
+        v-if="!props.minimalControls && displayedMarkers.length === 0 && mapStore.activeFilterCount > 0"
         :filter-count="mapStore.activeFilterCount"
         @clear="mapStore.resetFilters"
       />

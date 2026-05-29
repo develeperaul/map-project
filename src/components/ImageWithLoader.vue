@@ -90,7 +90,7 @@ onBeforeUnmount(() => {
   >
     <div
       v-if="!isLoaded && !hasError"
-      class="absolute inset-0 flex items-center justify-center"
+      class="absolute inset-0 flex items-center justify-center " 
       aria-hidden="true"
     >
       <div class="relative flex h-11 w-11 items-center justify-center rounded-full" :style="progressTrackStyle">
@@ -102,7 +102,7 @@ onBeforeUnmount(() => {
 
     <div
       v-else-if="hasError"
-      class="absolute inset-0 flex items-center justify-center"
+      class="absolute inset-0 flex items-center justify-center "
       aria-hidden="true"
     >
       <div class="flex h-12 w-12 items-center justify-center rounded-full bg-base-light-01 text-text-02">

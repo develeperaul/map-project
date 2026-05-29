@@ -372,4 +372,32 @@ describe('filter options', () => {
     store.setCategory('all')
     expect(store.locations).toEqual(['Казань', 'Москва', 'Санкт-Петербург'])
   })
+
+  it('builds calendar bounds from the active category markers', () => {
+    setActivePinia(createPinia())
+    const store = useMapStore()
+
+    store.projectMarkers = [
+      createProjectMarker('project-early', '2024-06-01'),
+      createProjectMarker('project-late', '2026-12-01'),
+    ]
+    const travelMarker = createTravelMarker('travel-early', 'Казань')
+    travelMarker.date = '2024-01-10'
+    store.travelMarkers = [travelMarker]
+    const sportMarker = createSportMarker('sport-early', ['Бег'])
+    sportMarker.date = '2024-03-05'
+    store.sportMarkers = [sportMarker]
+
+    const toLocalDate = (date: Date | null) => (
+      date ? `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}` : null
+    )
+
+    store.setCategory('all')
+    expect(toLocalDate(store.calendarDateBounds.minDate)).toBe('2024-01-10')
+    expect(toLocalDate(store.calendarDateBounds.maxDate)).toBe('2026-12-01')
+
+    store.setCategory('projects')
+    expect(toLocalDate(store.calendarDateBounds.minDate)).toBe('2024-06-01')
+    expect(toLocalDate(store.calendarDateBounds.maxDate)).toBe('2026-12-01')
+  })
 })

@@ -135,7 +135,7 @@ const getIconClass = (cat: Category) => {
         </button>
       </label>
     </div>
-    <div class="absolute right-0 top-4 transform translate-x-full w-fit grid gap-3">
+    <div class="absolute right-0 top-4 transform translate-x-full w-fit grid gap-3 ">
 
       <div v-if="activeTab" @click="refresh" class="rounded-r-[8px] py-4 px-2 bg-white cursor-pointer" style="box-shadow: rgba(0, 0, 0, 0.3) 2px 0px 2px 0px;">
         <BaseIcon name="close" class="shrink-0 w-4 h-4" />
